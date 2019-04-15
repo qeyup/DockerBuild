@@ -37,7 +37,7 @@ do
         SOURCE_DIR=$(dirname "$file")
         cd "$SOURCE_DIR"
         chmod +x $EXEC
-        bash -e -c $EXEC
+        bash -e -c ./$EXEC
     )
 
 done
