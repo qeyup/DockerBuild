@@ -29,15 +29,11 @@ do
 
     # Execute
     (
-        # Reload variables
-        #. /etc/bash.bashrc
-        #. ~/.bashrc
-
         # Exec istall
         SOURCE_DIR=$(dirname "$file")
         cd "$SOURCE_DIR"
         chmod +x $EXEC
-        bash -e -c ./$EXEC
+        /bin/bash -exi -c "source $EXEC"
     )
 
 done
