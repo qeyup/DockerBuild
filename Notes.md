@@ -55,6 +55,13 @@ done
 
 ```
 
+# Reset gitmodules
+
+```bash
+rm -f .git/index
+git reset
+```
+
 
 # Load all submodules of a .gitmodules files
 
