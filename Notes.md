@@ -83,7 +83,7 @@ done
 ```bash
 
 NAME_REPO_BRANCH=(
-    "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/x86_64"
+     "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/x86_64"
     "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0"
     "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/arm-linux-gnueabi_v7.4.1"
     "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/arm-linux-gnueabi_v6.5.0"
