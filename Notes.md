@@ -76,3 +76,78 @@ do
     git submodule add -b $branch --name $name $url $dir_path || continue
 done
 ```
+
+
+# Add submodules
+
+```bash
+
+NAME_REPO_BRANCH=(
+    "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/x86_64"
+    "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0"
+    "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/arm-linux-gnueabi_v7.4.1"
+    "zlib https://github.com/qeyup/DockerBuild_zlib.git v1.2.11/ubuntu_v18.04/arm-linux-gnueabi_v6.5.0"
+
+    "qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0@release_shared"
+    "qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0@release_static"
+    "qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0@debug_shared"
+    "qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/x86_64@debug_shared"
+    "qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/x86_64@release_shared"
+    "qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/x86_64@release_static"
+    "qt https://github.com/qeyup/DockerBuild_qt.git v5.12.2/ubuntu_v18.04/x86_64"
+
+    "commtool https://github.com/qeyup/DockerBuild_comm-tools.git ubuntu_v18.04"
+
+    "qpid-cpp v1.39.0/ubuntu_v18.04/x86_64 https://github.com/qeyup/DockerBuild_qpid-cpp.git"
+    "qpid-cpp v1.39.0/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0 https://github.com/qeyup/DockerBuild_qpid-cpp.git"
+    "qpid-cpp v1.39.0/ubuntu_v18.04/arm-linux-gnueabi_v7.4.1 https://github.com/qeyup/DockerBuild_qpid-cpp.git"
+    "qpid-cpp v1.39.0/ubuntu_v18.04/arm-linux-gnueabi_v6.5.0 https://github.com/qeyup/DockerBuild_qpid-cpp.git"
+    "qpid-cpp v1.38.0/ubuntu_v18.04/x86_64 https://github.com/qeyup/DockerBuild_qpid-cpp.git"
+
+    "qpid-proton v0.27.0/ubuntu_v18.04/x86_64 https://github.com/qeyup/DockerBuild_qpid-proton.git"
+    "qpid-proton v0.28.0/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0 https://github.com/qeyup/DockerBuild_qpid-proton.git"
+    "qpid-proton v0.28.0/ubuntu_v18.04/arm-linux-gnueabi_v7.4.1 https://github.com/qeyup/DockerBuild_qpid-proton.git"
+    "qpid-proton v0.28.0/ubuntu_v18.04/arm-linux-gnueabi_v6.5.0 https://github.com/qeyup/DockerBuild_qpid-proton.git"
+    "qpid-proton v0.28.0/ubuntu_v18.04/x86_64 https://github.com/qeyup/DockerBuild_qpid-proton.git"
+
+    "chrpath v0.16/ubuntu_v18.04/x86_64 https://github.com/qeyup/DockerBuild_chrpath.git"
+    "chrpath v0.16/ubuntu_v18.04/arm-linux-gnueabi_v6.5.0 https://github.com/qeyup/DockerBuild_chrpath.git"
+    "chrpath v0.16/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0 https://github.com/qeyup/DockerBuild_chrpath.git"
+    "chrpath v0.16/ubuntu_v18.04/arm-linux-gnueabi_v7.4.1 https://github.com/qeyup/DockerBuild_chrpath.git"
+
+    "toolchain arm-linux-gnueabi_v6.5.0/ubuntu_v18.04 https://github.com/qeyup/DockerBuild_linaro-toolchain.git"
+    "toolchain arm-linux-gnueabihf_v6.5.0/ubuntu_v18.04 https://github.com/qeyup/DockerBuild_linaro-toolchain.git"
+    "toolchain arm-linux-gnueabi_v7.4.1/ubuntu_v18.04 https://github.com/qeyup/DockerBuild_linaro-toolchain.git"
+
+    "openssl v1.0.2r/ubuntu_v18.04/x86_64 https://github.com/qeyup/DockerBuild_openssl.git "
+    "openssl v1.0.2r/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0 https://github.com/qeyup/DockerBuild_openssl.git"
+    "openssl v1.0.2r/ubuntu_v18.04/arm-linux-gnueabi_v7.4.1 https://github.com/qeyup/DockerBuild_openssl.git"
+    "openssl v1.0.2r/ubuntu_v18.04/arm-linux-gnueabi_v6.5.0 https://github.com/qeyup/DockerBuild_openssl.git"
+
+    "curl v7.64.1/ubuntu_v18.04/x86_64 https://github.com/qeyup/DockerBuild_curl.git"
+    "curl v7.64.1/ubuntu_v18.04/arm-linux-gnueabi_v6.5.0 https://github.com/qeyup/DockerBuild_curl.git"
+    "curl v7.64.1/ubuntu_v18.04/arm-linux-gnueabi_v7.4.1 https://github.com/qeyup/DockerBuild_curl.git"
+    "curl v7.64.1/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0 https://github.com/qeyup/DockerBuild_curl.git"
+
+    "libtool v2.4.6/ubuntu_v18.04/x86_64 https://github.com/qeyup/DockerBuild_libtool.git"
+    "libtool v2.4.6/ubuntu_v18.04/arm-linux-gnueabihf_v6.5.0 https://github.com/qeyup/DockerBuild_libtool.git"
+    "libtool v2.4.6/ubuntu_v18.04/arm-linux-gnueabi_v7.4.1 https://github.com/qeyup/DockerBuild_libtool.git"
+    "libtool v2.4.6/ubuntu_v18.04/arm-linux-gnueabi_v6.5.0 https://github.com/qeyup/DockerBuild_libtool.git"
+
+    "custom https://github.com/qeyup/DockerBuild_custom.git ubuntu_v18.04"
+
+    "gdpu-tool https://github.com/qeyup/DockerBuild_gdpu-tool.git ubuntu_v18.04"
+)
+
+for VAR in ${NAME_REPO_BRANCH[@]}
+do
+    eval "arr=($VAR)"
+    NAME="${arr[1]}"
+    REPO="${arr[2]}"
+    BRANCH="${arr[3]}"
+    FOLDER="$(echo ${NAME}_${BRANCH} | sed 's/[/]/__/g')"
+
+    git submodule add -b ${BRANCH} ${REPO} ${FOLDER}
+done
+
+```
