@@ -8,7 +8,7 @@ mkdir -p $TMP_DIR
 
 
 # Find all install script
-find $PWD -name "$EXEC" | while read line; do echo "$(echo $line | grep -o / | wc -l)->$line"; done | sort -rn | while read file
+find $PWD -name "$EXEC" | while read line; do echo $line; done | sort | while read file
 do
     # Remove num
     file=$(echo $file | sed "s/^.*->//g")
@@ -25,7 +25,6 @@ do
     else
         touch "$CHECK"
     fi
-
 
     # Execute
     (
