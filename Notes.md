@@ -10,7 +10,7 @@ NAME_REPO_BRANCH=(
     "1_qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/x86_64@debug_shared"
     "1_qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/x86_64@release_shared"
     "1_qt https://github.com/qeyup/DockerBuild_qt.git v4.8.7/ubuntu_v18.04/x86_64@release_static"
-    "1_qt https://github.com/qeyup/DockerBuild_qt.git v5.12.2/ubuntu_v18.04/x86_64"
+    #"1_qt https://github.com/qeyup/DockerBuild_qt.git v5.12.2/ubuntu_v18.04/x86_64"
     "1_qpid-proton https://github.com/qeyup/DockerBuild_qpid-proton.git v0.27.0/ubuntu_v18.04/x86_64"
     "1_qpid-proton https://github.com/qeyup/DockerBuild_qpid-proton.git v0.28.0/ubuntu_v18.04/x86_64"
     "1_chrpath https://github.com/qeyup/DockerBuild_chrpath.git v0.16/ubuntu_v18.04/x86_64"
