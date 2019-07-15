@@ -1,4 +1,4 @@
-# Add submodules to custom proyect
+# Add submodules to custom project
 
 ```bash
 
