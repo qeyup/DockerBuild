@@ -8,7 +8,7 @@ set -e
 DOCKER_BASE_IMAGE="ubuntu:18.04"
 
 #> base image
-DOCKER_IMAGE_NAME="test"
+DOCKER_IMAGE_NAME="docker_image_name"
 
 # Added args when building de image
 DOCKER_BUILD_ARGS=""
@@ -21,15 +21,16 @@ DOCKER_TAIL_FILE=""
 
 # Skip similar bash files (true/false)
 SKIP=true
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# File to find and execute
+EXEC="Dockerfile.sh"
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 ##########################################
 #> Tmp dir
 TMP_DIR=".added/"
 TMP_DOCKER_FOLDER="/tmp/docker_build"
-EXEC="Dockerfile.sh"
 SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 rm -rf ${TMP_DIR}
 mkdir -p ${TMP_DIR}
@@ -71,11 +72,12 @@ do
 
     #> Exec install
     SOURCE_DIR=$(dirname "$file")
+    SOURCE_DIR=$(realpath --relative-to=$PWD $SOURCE_DIR)
     echo "# Building '${SOURCE_DIR}/${EXEC}'" >> Dockerfile
-    echo "RUN mkdir -p ${TMP_DOCKER_FOLDER}${SOURCE_DIR}" >> Dockerfile
-    echo "COPY ${SOURCE_DIR}/. ${TMP_DOCKER_FOLDER}${SOURCE_DIR}/" >> Dockerfile
+    echo "RUN mkdir -p ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}" >> Dockerfile
+    echo "COPY ${SOURCE_DIR}/. ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/" >> Dockerfile
     echo "RUN chmod u+x ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/${EXEC}" >> Dockerfile
-    echo "RUN cd ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/ && /bin/bash -exi -c \"source ${EXEC}\"" >> Dockerfile
+    echo "RUN cd ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/ && /bin/bash -iex -c \"source ${EXEC}\"" >> Dockerfile
     echo "" >> Dockerfile
     echo "" >> Dockerfile
 
@@ -89,7 +91,7 @@ done
 
 
 #> Clean
-echo "RUN rm ${TMP_DOCKER_FOLDER}" >> Dockerfile
+echo "RUN rm -rf ${TMP_DOCKER_FOLDER}" >> Dockerfile
 
 
 #> Add tail
@@ -102,9 +104,10 @@ fi
 
 
 # Execute docker build
-set -x
-sudo docker build -t $DOCKER_IMAGE_NAME $DOCKER_BUILD_ARGS .
-set +x
+(
+    set -x
+    sudo docker build -t $DOCKER_IMAGE_NAME $DOCKER_BUILD_ARGS .
+)
 
 
 # Remove temporal files
