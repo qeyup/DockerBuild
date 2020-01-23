@@ -1,51 +1,112 @@
 #!/bin/bash
 set -e
 
-# Tmp dir
-export TMP_DIR="/tmp/Dockerinstall"
-export EXEC="Dockerfile.sh"
-export SORT_STRING="~~~~~~~~"
-mkdir -p $TMP_DIR
 
 
-# Find all install script
+#~~~ CONFIGURABLE PARAMETERS ~~~~~~~~~~~~~~
+#> base image
+DOCKER_BASE_IMAGE="ubuntu:18.04"
+
+#> base image
+DOCKER_IMAGE_NAME="test"
+
+# Added args when building de image
+DOCKER_BUILD_ARGS=""
+
+# Added lines at the top of the generated Dockerfile
+DOCKER_HEADER_FILE=""
+
+# Added lines at the buttom of the generated Dockerfile
+DOCKER_TAIL_FILE=""
+
+# Skip similar bash files (true/false)
+SKIP=true
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+##########################################
+#> Tmp dir
+TMP_DIR=".added/"
+TMP_DOCKER_FOLDER="/tmp/docker_build"
+EXEC="Dockerfile.sh"
+SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+rm -rf ${TMP_DIR}
+mkdir -p ${TMP_DIR}
+
+
+#> Create main docker file
+rm -f Dockerfile
+touch Dockerfile
+echo "FROM ${DOCKER_BASE_IMAGE}" >> Dockerfile
+echo "" >> Dockerfile
+echo "" >> Dockerfile
+
+#> Add header file
+if [ -f "${DOCKER_HEADER_FILE}" ]
+then
+    cat ${DOCKER_HEADER_FILE} >> Dockerfile
+    echo "" >> Dockerfile
+    echo "" >> Dockerfile
+fi
+
+#> Find build scripts
 find $PWD -name "$EXEC" | sed "s/$EXEC/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC/g" | while read file
 do
-    # Generate tmp file
-    CHECK=$(md5sum "$file" | cut -c -32)
-    CHECK="$TMP_DIR/$CHECK"
+    #> Check
+    if [ "$SKIP" = true ] ; then
+        #> Generate tmp file
+        CHECK=$(md5sum "${file}" | cut -c -32)
+        CHECK="${TMP_DIR}/${CHECK}"
 
 
-    # Check if file is been executed
-    SEP="============================================================================"
-    if [ -e "$CHECK" ]
-    then
-        echo "$SEP"
-        echo "[SKIPED] $file"
-        echo "$SEP"
-        continue
-    else
-        echo "$SEP"
-        echo "[BUILDING] $file"
-        echo "$SEP"
-        touch "$CHECK"
+        #> Check if file is been executed
+        if [ -e "${CHECK}" ]
+        then
+            echo "[SKIPED] ${file}"
+            continue
+        fi
     fi
 
-    # Execute
-    (
-        # Exec istall
-        SOURCE_DIR=$(dirname "$file")
-        cd "$SOURCE_DIR"
-        chmod +x $EXEC
-        /bin/bash -exi -c "source $EXEC" || ( echo "$SEP" && echo "[ERROR] $file" && echo "$SEP" &&  exit -1; )
-    )
 
-    echo "$SEP"
-    echo "[BUILT] $file"
-    echo "$SEP"
+    #> Exec install
+    SOURCE_DIR=$(dirname "$file")
+    echo "# Building '${SOURCE_DIR}/${EXEC}'" >> Dockerfile
+    echo "RUN mkdir -p ${TMP_DOCKER_FOLDER}${SOURCE_DIR}" >> Dockerfile
+    echo "COPY ${SOURCE_DIR}/. ${TMP_DOCKER_FOLDER}${SOURCE_DIR}/" >> Dockerfile
+    echo "RUN chmod u+x ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/${EXEC}" >> Dockerfile
+    echo "RUN cd ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/ && /bin/bash -exi -c \"source ${EXEC}\"" >> Dockerfile
+    echo "" >> Dockerfile
+    echo "" >> Dockerfile
 
+
+    #> Register
+    echo "[ADDED]  ${file}"
+    if [ "$SKIP" = true ] ; then
+        touch "${CHECK}"
+    fi
 done
 
 
+#> Clean
+echo "RUN rm ${TMP_DOCKER_FOLDER}" >> Dockerfile
+
+
+#> Add tail
+if [ -f "${DOCKER_HEADER_FILE}" ]
+then
+    cat ${DOCKER_HEADER_FILE} >> Dockerfile
+    echo "" >> Dockerfile
+    echo "" >> Dockerfile
+fi
+
+
+# Execute docker build
+set -x
+sudo docker build -t $DOCKER_IMAGE_NAME $DOCKER_BUILD_ARGS .
+set +x
+
+
 # Remove temporal files
-rm -rf $TMP_DIR
+rm -r ${TMP_DIR}
+#rm Dockerfile
