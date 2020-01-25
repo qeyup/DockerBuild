@@ -15,12 +15,12 @@ EXEC="Dockerfile.sh"
 EXEC_DEBUG="Dockerfile.debug.sh"
 EXEC_SORT_KEY="Dockerfile."
 CREATED_DOCKER_FILE=".Dockerfile"
-GENERATE_CONTENT_LABEL="# [GENERATED CONTENT SPACE (DO NOT REMOVE THIS LINE)]"
-DOCKERFILE_SCRIPTS_START_SEARCH="$PWD"
+GENERATE_CONTENT_LABEL="# [DO NOT REMOVE THIS LINE. THIS LINE WILL BE REMPLACED WITH GENERATED CODE]"
+DEFAULT_DOCKERFILE_PATH="$PWD"
 
 
 # Process args
-while getopts hd:a opt
+while getopts hd:D:a opt
 do
     case $opt in
         # Help
@@ -32,8 +32,9 @@ do
             log ""
             log " DockerBuild.sh comand args help"
             log ""
-            log "  -d \t Dir where start the searh of 'dockerfile.sh' files. By default is the calling directory."
-            log "  -a \t Specify docker build command args."
+            log "  -D \t Folder where Dockerfile is place. By default is the calling directory."
+            log "  -d \t Folder where script will start the search of 'dockerfile.sh' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
+            log "  -a \t docker build command args."
             log ""
             log ""
             log "   Docker build command args help"
@@ -45,12 +46,19 @@ do
         ;;
 
         d)
-            DOCKERFILE_SCRIPTS_START_SEARCH=$(realpath $OPTARG --relative-to $PWD)
-            if [ -d "$(echo $DOCKERFILE_SCRIPTS_START_SEARCH | sed s/'\/..'/NOT_VALID/g)" ]
+            DOCKERFILE_SCRIPTS_START_SEARCH=$OPTARG
+            if [ ! -d "$DOCKERFILE_SCRIPTS_START_SEARCH" ]
             then
-                log "Dockerfile.sh search will start at '$DOCKERFILE_SCRIPTS_START_SEARCH' "
-            else
-                log "Given dir path '$DOCKERFILE_SCRIPTS_START_SEARCH' is not valid"
+                log "Given dir path'$DOCKERFILE_PATH' does not exists"
+                exit -1
+            fi
+        ;;
+
+        D)
+            DOCKERFILE_PATH=$OPTARG
+            if [ ! -d "$DOCKERFILE_PATH" ]
+            then
+                log "Given dir path '$DOCKERFILE_PATH' does not exists"
                 exit -1
             fi
         ;;
@@ -66,8 +74,29 @@ do
 done
 
 
+#> Set defaults
+if [ "$DOCKERFILE_PATH" = "" ]
+then
+    DOCKERFILE_PATH=$DEFAULT_DOCKERFILE_PATH
+fi
+if [ "$DOCKERFILE_SCRIPTS_START_SEARCH" = "" ]
+then
+    DOCKERFILE_SCRIPTS_START_SEARCH=$DOCKERFILE_PATH
+fi
+
+
 #> Set Dockerfile path
-DOCKERFILE_PATH="$PWD/Dockerfile"
+DOCKERFILE_SCRIPTS_START_SEARCH=$(realpath $DOCKERFILE_SCRIPTS_START_SEARCH --relative-to $DOCKERFILE_PATH)
+cd $DOCKERFILE_PATH
+DOCKERFILE_PATH="Dockerfile"
+
+
+#> Chech script path
+if [ ! -d "$(echo $DOCKERFILE_SCRIPTS_START_SEARCH | sed s/'..'/NOT_VALID/g)" ]
+then
+    log "Given dir path '$DOCKERFILE_SCRIPTS_START_SEARCH' is not valid"
+    exit -1
+fi
 
 
 # Create Dockerfile template
@@ -88,15 +117,15 @@ then
     DOCKERFILE_CONTEND+="#DB SKIP=true\n"
     DOCKERFILE_CONTEND+="########################################\n"
     DOCKERFILE_CONTEND+="\n"
-    DOCKERFILE_CONTEND+="\n"
     DOCKERFILE_CONTEND+="$GENERATE_CONTENT_LABEL"
+    DOCKERFILE_CONTEND+="\n"
     DOCKERFILE_CONTEND+="\n"
     DOCKERFILE_CONTEND+="\n"
     DOCKERFILE_CONTEND+="WORKDIR /root/\n"
     DOCKERFILE_CONTEND+="\n"
 
     echo -e "$DOCKERFILE_CONTEND" > $DOCKERFILE_PATH
-    log "Created template Dokerfile. Configure it and execute again '$0$@' to build de docker image."
+    log "Created template Dokerfile. Configure it and execute again '$0 $@' to build de docker image."
     exit 0
 fi
 
