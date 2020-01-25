@@ -4,7 +4,7 @@ set -e
 
 #> Log
 function log {
-    echo "$@"
+    echo -e "$@"
 }
 
 #> Variables
@@ -14,28 +14,54 @@ SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 EXEC="Dockerfile.sh"
 CREATED_DOCKER_FILE=".Dockerfile"
 GENERATE_CONTENT_LABEL="# [GENERATED CONTENT SPACE (DO NOT REMOVE THIS LINE)]"
-
-#> Usage
-if [ "$1" = "" ]
-then
-    log ""
-    log " Usage: $0 [Dockerfile_path] [docker_build_args]"
-    log ""
-    exit 0
-fi
+DOCKERFILE_SCRIPTS_START_SEARCH="$PWD"
 
 
-#> Dockerfile path 
-if [ -f "$1" ]
-then
-    DOCKERFILE_PATH="$1"
-elif [ -d "$1" ]
-then
-    DOCKERFILE_PATH="$1/Dockerfile"
-else
-    log "al least Dockerfile path must be specify"
-    exit -1
-fi
+# Process args
+while getopts hd:a opt
+do
+    case $opt in
+        # Help
+        h)
+            log ""
+            log "DockerBuild.sh comand args help"
+            log ""
+            log "  -d \t Dir where start the searh of dockerfile.sh files. By defaukt is '$PWD'"
+            log "  -a \t Specify docker build command args"
+            log ""
+            log ""
+            log "  Docker build command args help"
+            log ""
+            docker build --help 2> /dev/null | grep "  -*" | grep -v "  -t,"
+            log ""
+            log ""
+            exit 0
+        ;;
+
+        d)
+            DOCKERFILE_SCRIPTS_START_SEARCH=$(realpath $OPTARG --relative-to $PWD)
+            if [ -d "$(echo $DOCKERFILE_SCRIPTS_START_SEARCH | sed s/'\/..'/NOT_VALID/g)" ]
+            then
+                log "Dockerfile.sh search will start at '$DOCKERFILE_SCRIPTS_START_SEARCH' "
+            else
+                log "Given dir path '$DOCKERFILE_SCRIPTS_START_SEARCH' is not valid"
+                exit -1
+            fi
+        ;;
+
+        a) 
+            shift $(($OPTIND - 1))
+            DOCKER_BUILD_EXTRA_ARGS="$@"
+            break
+        ;;
+
+      
+    esac
+done
+
+
+#> Set Dockerfile path
+DOCKERFILE_PATH="$PWD/Dockerfile"
 
 
 # Create Dockerfile template
@@ -98,7 +124,7 @@ touch ${CREATED_DOCKER_FILE}
 
 
 #> Find files and sort them
-FOUND_FILES=$(find $PWD -name "$EXEC" | sed "s/$EXEC/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC/g" | while read file; do echo ${file}; done;)
+FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC" | sed "s/$EXEC/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC/g" | while read file; do echo ${file}; done;)
 
 
 #> Find build scripts
@@ -162,10 +188,10 @@ done
     if [ "$EUID" -ne 0 ]
     then
         set -x
-        sudo docker build -t $DOCKER_IMAGE_NAME -f ${CREATED_DOCKER_FILE} $DOCKER_BUILD_ARGS .
+        sudo docker build -t $DOCKER_IMAGE_NAME -f ${CREATED_DOCKER_FILE} $DOCKER_BUILD_ARGS $DOCKER_BUILD_EXTRA_ARGS .
     else
         set -x
-        docker build -t $DOCKER_IMAGE_NAME -f ${CREATED_DOCKER_FILE} $DOCKER_BUILD_ARGS .
+        docker build -t $DOCKER_IMAGE_NAME -f ${CREATED_DOCKER_FILE} $DOCKER_BUILD_ARGS $DOCKER_BUILD_EXTRA_ARGS .
     fi
 )
 
