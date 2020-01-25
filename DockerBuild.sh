@@ -10,8 +10,10 @@ function log {
 #> Variables
 TMP_DIR=".added/"
 TMP_DOCKER_FOLDER="/tmp/docker_build"
-SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 EXEC="Dockerfile.sh"
+EXEC_DEBUG="Dockerfile.debug.sh"
+EXEC_SORT_KEY="Dockerfile."
 CREATED_DOCKER_FILE=".Dockerfile"
 GENERATE_CONTENT_LABEL="# [GENERATED CONTENT SPACE (DO NOT REMOVE THIS LINE)]"
 DOCKERFILE_SCRIPTS_START_SEARCH="$PWD"
@@ -23,14 +25,18 @@ do
     case $opt in
         # Help
         h)
-            log ""
-            log "DockerBuild.sh comand args help"
-            log ""
-            log "  -d \t Dir where start the searh of dockerfile.sh files. By defaukt is '$PWD'"
-            log "  -a \t Specify docker build command args"
+            log "The script will search for 'Dockerfile.sh' scripts and append them in the main Dockerfile before build it."
+            log "* It will take into acount the found 'Dockerfile.sh' files hierarchy order."
+            log "* To debug an 'Dockerfile.sh' script just set the script name as 'Dockerfile.debug.sh'."
             log ""
             log ""
-            log "  Docker build command args help"
+            log " DockerBuild.sh comand args help"
+            log ""
+            log "  -d \t Dir where start the searh of 'dockerfile.sh' files. By default is the calling directory."
+            log "  -a \t Specify docker build command args."
+            log ""
+            log ""
+            log "   Docker build command args help"
             log ""
             docker build --help 2> /dev/null | grep "  -*" | grep -v "  -t,"
             log ""
@@ -124,12 +130,20 @@ touch ${CREATED_DOCKER_FILE}
 
 
 #> Find files and sort them
-FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC" | sed "s/$EXEC/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC/g" | while read file; do echo ${file}; done;)
+FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC" -or -name "$EXEC_DEBUG" | sed "s/$EXEC_SORT_KEY/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC_SORT_KEY/g" | while read file; do echo ${file}; done;)
 
 
 #> Find build scripts
 for file in $FOUND_FILES
 do
+    #> Check debug
+    if [ "$(basename ${file})" == "$EXEC_DEBUG" ]
+    then
+        log "[DEBUG]  ${file}"
+        DEBUG_FOLDER=$(dirname "$file")
+        break
+    fi
+    
     #> Check
     if [ "$SKIP" = true ] ; then
         #> Generate tmp file
@@ -140,7 +154,7 @@ do
         #> Check if file is been executed
         if [ -e "${CHECK}" ]
         then
-            echo "[SKIPED] ${file}"
+            log "[SKIPED] ${file}"
             continue
         fi
     fi
@@ -159,7 +173,7 @@ do
 
 
     #> Register
-    echo "[ADDED]  ${file}"
+    log "[ADDED]  ${file}"
     if [ "$SKIP" = true ] ; then
         touch "${CHECK}"
     fi
@@ -183,19 +197,31 @@ do
 done
 
 
-# Execute docker build
+#> root command required
+if [ "$EUID" -ne 0 ]
+then
+    ROOT_COMMAND="sudo"
+fi
+
+#> Execute docker build
 (
-    if [ "$EUID" -ne 0 ]
-    then
-        set -x
-        sudo docker build -t $DOCKER_IMAGE_NAME -f ${CREATED_DOCKER_FILE} $DOCKER_BUILD_ARGS $DOCKER_BUILD_EXTRA_ARGS .
-    else
-        set -x
-        docker build -t $DOCKER_IMAGE_NAME -f ${CREATED_DOCKER_FILE} $DOCKER_BUILD_ARGS $DOCKER_BUILD_EXTRA_ARGS .
-    fi
+    log ""
+    set -x
+    $ROOT_COMMAND docker build -t $DOCKER_IMAGE_NAME -f ${CREATED_DOCKER_FILE} $DOCKER_BUILD_ARGS $DOCKER_BUILD_EXTRA_ARGS .
 )
 
 
-# Remove temporal files
+#> Start debug session
+if [ ! "$DEBUG_FOLDER" = "" ]
+then
+    (
+        log ""
+        set -x
+        $ROOT_COMMAND docker run -it --rm --name ${DOCKER_IMAGE_NAME}_debug -v ${DEBUG_FOLDER}:/root/workspace -w /root/workspace ${DOCKER_IMAGE_NAME}
+    )
+fi
+
+
+#> Remove temporal files
 rm -r ${TMP_DIR}
 rm ${CREATED_DOCKER_FILE}
