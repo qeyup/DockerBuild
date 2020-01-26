@@ -8,7 +8,6 @@ function log {
 }
 
 #> Variables
-TMP_DIR=".added/"
 TMP_DOCKER_FOLDER="/tmp/docker_build"
 SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 EXEC="Dockerfile.sh"
@@ -146,11 +145,6 @@ then
 fi
 
 
-#> Tmp dir
-rm -rf ${TMP_DIR}
-mkdir -p ${TMP_DIR}
-
-
 #> Create main docker file
 rm -f ${CREATED_DOCKER_FILE}
 touch ${CREATED_DOCKER_FILE}
@@ -232,5 +226,4 @@ fi
 
 
 #> Remove temporal files
-rm -r ${TMP_DIR}
 rm ${CREATED_DOCKER_FILE}
