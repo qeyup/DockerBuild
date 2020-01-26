@@ -153,7 +153,7 @@ touch ${CREATED_DOCKER_FILE}
 
 #> Find files and sort them
 IFS=";"
-FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC" -or -name "$EXEC_DEBUG" | sed "s/$EXEC_SORT_KEY/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC_SORT_KEY/g" | while read file; do echo "${file};"; done;)
+FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC" -or -name "$EXEC_DEBUG" | sed "s/$EXEC_SORT_KEY/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC_SORT_KEY/g" | while read file; do echo -ne "${file};"; done;)
 
 
 #> Find build scripts
@@ -170,7 +170,7 @@ do
 
     #> Exec install steps
     SOURCE_DIR=$(dirname "$file")
-    SOURCE_DIR=$(realpath --relative-to=$PWD $SOURCE_DIR)
+    SOURCE_DIR=$(realpath --relative-to=$PWD "$SOURCE_DIR")
     DOCKERFILE_CONTEND+="# Building '${SOURCE_DIR}/${EXEC}'\n"
     DOCKERFILE_CONTEND+="RUN mkdir -p \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}\"\n"
     DOCKERFILE_CONTEND+="COPY [\"${SOURCE_DIR}/.\", \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/\"]\n"
