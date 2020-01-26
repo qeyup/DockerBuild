@@ -113,8 +113,6 @@ then
     DOCKERFILE_CONTEND+="# Docker build defined args\n"
     DOCKERFILE_CONTEND+="#DB DOCKER_BUILD_ARGS=\n"
     DOCKERFILE_CONTEND+="\n"
-    DOCKERFILE_CONTEND+="# Skip similar found modules\n"
-    DOCKERFILE_CONTEND+="#DB SKIP=true\n"
     DOCKERFILE_CONTEND+="########################################\n"
     DOCKERFILE_CONTEND+="\n"
     DOCKERFILE_CONTEND+="$GENERATE_CONTENT_LABEL"
@@ -172,21 +170,6 @@ do
         DEBUG_FOLDER=$(dirname "$file")
         break
     fi
-    
-    #> Check
-    if [ "$SKIP" = true ] ; then
-        #> Generate tmp file
-        CHECK=$(md5sum "${file}" | cut -c -32)
-        CHECK="${TMP_DIR}/${CHECK}"
-
-
-        #> Check if file is been executed
-        if [ -e "${CHECK}" ]
-        then
-            log "[SKIPED] ${file}"
-            continue
-        fi
-    fi
 
 
     #> Exec install steps
@@ -203,9 +186,6 @@ do
 
     #> Register
     log "[ADDED]  ${file}"
-    if [ "$SKIP" = true ] ; then
-        touch "${CHECK}"
-    fi
 done
 
 
