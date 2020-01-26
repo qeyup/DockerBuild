@@ -157,6 +157,7 @@ FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC" -or -name "$EX
 
 
 #> Find build scripts
+counter=0
 for file in $FOUND_FILES
 do
     #> Check debug
@@ -169,13 +170,14 @@ do
 
 
     #> Exec install steps
+    counter=$((counter+1))
     SOURCE_DIR=$(dirname "$file")
     SOURCE_DIR=$(realpath --relative-to=$PWD "$SOURCE_DIR")
     DOCKERFILE_CONTEND+="# Building '${SOURCE_DIR}/${EXEC}'\n"
-    DOCKERFILE_CONTEND+="RUN mkdir -p \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}\"\n"
-    DOCKERFILE_CONTEND+="COPY [\"${SOURCE_DIR}/.\", \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/\"]\n"
-    DOCKERFILE_CONTEND+="RUN chmod u+x \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/${EXEC}\"\n"
-    DOCKERFILE_CONTEND+="RUN cd \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/\" && /bin/bash -iex -c \"source ${EXEC}\"\n"
+    DOCKERFILE_CONTEND+="RUN mkdir -p \"${TMP_DOCKER_FOLDER}/${counter}\"\n"
+    DOCKERFILE_CONTEND+="COPY [\"${SOURCE_DIR}/.\", \"${TMP_DOCKER_FOLDER}/${counter}/\"]\n"
+    DOCKERFILE_CONTEND+="RUN chmod u+x \"${TMP_DOCKER_FOLDER}/${counter}/${EXEC}\"\n"
+    DOCKERFILE_CONTEND+="RUN cd \"${TMP_DOCKER_FOLDER}/${counter}/\" && /bin/bash -iex -c \"source ${EXEC}\"\n"
     DOCKERFILE_CONTEND+="\n"
     DOCKERFILE_CONTEND+="\n"
 
