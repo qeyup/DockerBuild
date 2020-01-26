@@ -91,7 +91,8 @@ DOCKERFILE_PATH="Dockerfile"
 
 
 #> Chech script path
-if [ ! -d "$(echo $DOCKERFILE_SCRIPTS_START_SEARCH | sed s/'..'/NOT_VALID/g)" ]
+echo $DOCKERFILE_SCRIPTS_START_SEARCH
+if [ ! -d "$(echo $DOCKERFILE_SCRIPTS_START_SEARCH | sed s/'\.\.'/NOT_VALID/g)" ]
 then
     log "Given dir path '$DOCKERFILE_SCRIPTS_START_SEARCH' is not valid"
     exit -1
@@ -161,7 +162,7 @@ do
     if [ "$(basename ${file})" == "$EXEC_DEBUG" ]
     then
         log "[DEBUG]  ${file}"
-        DEBUG_FOLDER=$(dirname "$file")
+        DEBUG_FOLDER=$(realpath $(dirname "$file"))
         break
     fi
 
