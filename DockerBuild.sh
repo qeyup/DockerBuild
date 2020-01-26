@@ -45,16 +45,16 @@ do
         ;;
 
         d)
-            DOCKERFILE_SCRIPTS_START_SEARCH=$OPTARG
+            DOCKERFILE_SCRIPTS_START_SEARCH="$OPTARG"
             if [ ! -d "$DOCKERFILE_SCRIPTS_START_SEARCH" ]
             then
-                log "Given dir path'$DOCKERFILE_PATH' does not exists"
+                log "Given dir path '$DOCKERFILE_SCRIPTS_START_SEARCH' does not exists"
                 exit -1
             fi
         ;;
 
         D)
-            DOCKERFILE_PATH=$OPTARG
+            DOCKERFILE_PATH="$OPTARG"
             if [ ! -d "$DOCKERFILE_PATH" ]
             then
                 log "Given dir path '$DOCKERFILE_PATH' does not exists"
@@ -76,23 +76,23 @@ done
 #> Set defaults
 if [ "$DOCKERFILE_PATH" = "" ]
 then
-    DOCKERFILE_PATH=$DEFAULT_DOCKERFILE_PATH
+    DOCKERFILE_PATH="$DEFAULT_DOCKERFILE_PATH"
 fi
 if [ "$DOCKERFILE_SCRIPTS_START_SEARCH" = "" ]
 then
-    DOCKERFILE_SCRIPTS_START_SEARCH=$DOCKERFILE_PATH
+    DOCKERFILE_SCRIPTS_START_SEARCH="$DOCKERFILE_PATH"
 fi
 
 
 #> Set Dockerfile path
-DOCKERFILE_SCRIPTS_START_SEARCH=$(realpath $DOCKERFILE_SCRIPTS_START_SEARCH --relative-to $DOCKERFILE_PATH)
-cd $DOCKERFILE_PATH
+DOCKERFILE_SCRIPTS_START_SEARCH=$(realpath "$DOCKERFILE_SCRIPTS_START_SEARCH" --relative-to "$DOCKERFILE_PATH")
+cd "$DOCKERFILE_PATH"
 DOCKERFILE_PATH="Dockerfile"
 
 
 #> Chech script path
-echo $DOCKERFILE_SCRIPTS_START_SEARCH
-if [ ! -d "$(echo $DOCKERFILE_SCRIPTS_START_SEARCH | sed s/'\.\.'/NOT_VALID/g)" ]
+echo "$DOCKERFILE_SCRIPTS_START_SEARCH"
+if [ ! -d "$(echo "$DOCKERFILE_SCRIPTS_START_SEARCH" | sed s/'\.\.'/NOT_VALID/g)" ]
 then
     log "Given dir path '$DOCKERFILE_SCRIPTS_START_SEARCH' is not valid"
     exit -1
@@ -122,14 +122,14 @@ then
     DOCKERFILE_CONTEND+="WORKDIR /root/\n"
     DOCKERFILE_CONTEND+="\n"
 
-    echo -e "$DOCKERFILE_CONTEND" > $DOCKERFILE_PATH
+    echo -e "$DOCKERFILE_CONTEND" > "$DOCKERFILE_PATH"
     log "Created template Dokerfile. Configure it and execute again '$0 $@' to build de docker image."
     exit 0
 fi
 
 
 # Read variables
-VARS_ARRAY=$(cat $DOCKERFILE_PATH | grep "#DB " | sed "s/^#DB //g" | while read var; do echo $var; done; )
+VARS_ARRAY=$(cat "$DOCKERFILE_PATH" | grep "#DB " | sed "s/^#DB //g" | while read var; do echo $var; done; )
 
 # export vars
 for VAR in $VARS_ARRAY
@@ -152,7 +152,8 @@ touch ${CREATED_DOCKER_FILE}
 
 
 #> Find files and sort them
-FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC" -or -name "$EXEC_DEBUG" | sed "s/$EXEC_SORT_KEY/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC_SORT_KEY/g" | while read file; do echo ${file}; done;)
+IFS=";"
+FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC" -or -name "$EXEC_DEBUG" | sed "s/$EXEC_SORT_KEY/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC_SORT_KEY/g" | while read file; do echo "${file};"; done;)
 
 
 #> Find build scripts
@@ -171,10 +172,10 @@ do
     SOURCE_DIR=$(dirname "$file")
     SOURCE_DIR=$(realpath --relative-to=$PWD $SOURCE_DIR)
     DOCKERFILE_CONTEND+="# Building '${SOURCE_DIR}/${EXEC}'\n"
-    DOCKERFILE_CONTEND+="RUN mkdir -p ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}\n"
-    DOCKERFILE_CONTEND+="COPY ${SOURCE_DIR}/. ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/\n"
-    DOCKERFILE_CONTEND+="RUN chmod u+x ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/${EXEC}\n"
-    DOCKERFILE_CONTEND+="RUN cd ${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/ && /bin/bash -iex -c \"source ${EXEC}\"\n"
+    DOCKERFILE_CONTEND+="RUN mkdir -p \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}\"\n"
+    DOCKERFILE_CONTEND+="COPY [\"${SOURCE_DIR}/.\", \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/\"]\n"
+    DOCKERFILE_CONTEND+="RUN chmod u+x \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/${EXEC}\"\n"
+    DOCKERFILE_CONTEND+="RUN cd \"${TMP_DOCKER_FOLDER}/${SOURCE_DIR}/\" && /bin/bash -iex -c \"source ${EXEC}\"\n"
     DOCKERFILE_CONTEND+="\n"
     DOCKERFILE_CONTEND+="\n"
 
@@ -185,7 +186,7 @@ done
 
 
 #> Clean step
-DOCKERFILE_CONTEND+="RUN rm -rf ${TMP_DOCKER_FOLDER}"
+DOCKERFILE_CONTEND+="RUN rm -rf \"${TMP_DOCKER_FOLDER}\""
 
 
 #> Put generated code in file
