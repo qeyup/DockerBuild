@@ -16,6 +16,9 @@ EXEC_SORT_KEY="Dockerfile."
 CREATED_DOCKER_FILE=".Dockerfile"
 GENERATE_CONTENT_LABEL="# [DO NOT REMOVE THIS LINE. THIS LINE WILL BE REMPLACED WITH GENERATED CODE]"
 DEFAULT_DOCKERFILE_PATH="$PWD"
+DOCKER_DEBUG_FOLDER="/tmp/debug_folder"
+DOCKER_DEBUG_SCRIPT="/tmp/debug.sh"
+DOCKER_WORKSPACE="/root/"
 
 
 # Process args
@@ -165,6 +168,10 @@ do
     then
         log "[DEBUG]  ${file}"
         DEBUG_FOLDER=$(realpath $(dirname "$file"))
+        DOCKERFILE_CONTEND+="RUN echo \"#!/bin/bash\" >> ${DOCKER_DEBUG_SCRIPT} \n"
+        DOCKERFILE_CONTEND+="RUN echo \"find ${DOCKER_DEBUG_FOLDER} -maxdepth 1 -mindepth 1 -exec  ln -s {} ${DOCKER_WORKSPACE} \\;\" >> ${DOCKER_DEBUG_SCRIPT}\n"
+        DOCKERFILE_CONTEND+="RUN chmod u+x \"${DOCKER_DEBUG_SCRIPT}\"\n"
+        DOCKERFILE_CONTEND+="ENTRYPOINT ${DOCKER_DEBUG_SCRIPT} && rm ${DOCKER_DEBUG_SCRIPT} && bash \n"
         break
     fi
 
@@ -224,7 +231,13 @@ then
     (
         log ""
         set -x
-        $ROOT_COMMAND docker run -it --rm --name ${DOCKER_IMAGE_NAME}_debug -v ${DEBUG_FOLDER}:/root/workspace -w /root/workspace ${DOCKER_IMAGE_NAME}
+        $ROOT_COMMAND docker run \
+                                -it \
+                                --rm \
+                                --name ${DOCKER_IMAGE_NAME}_debug \
+                                -v ${DEBUG_FOLDER}:${DOCKER_DEBUG_FOLDER} \
+                                -w ${DOCKER_WORKSPACE} \
+                                ${DOCKER_IMAGE_NAME}
     )
 fi
 
