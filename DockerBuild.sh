@@ -198,7 +198,6 @@ do
     #> Check debug
     if [ "$(basename ${file})" = "$EXEC_DEBUG" ]
     then
-        log "[DEBUG]  ${file}"
         DEBUG_FOLDER=$(realpath $(dirname "$file"))
         DOCKERFILE_CONTEND+="RUN cat ${BUILD_SOURCE_FILE} >> /etc/bash.bashrc\n"
         DOCKERFILE_CONTEND+="ENTRYPOINT cp -r ${DOCKER_DEBUG_FOLDER}/* ${DOCKER_WORKSPACE}/ && ln -sf ${DOCKER_DEBUG_FOLDER}/${EXEC_DEBUG} ${DOCKER_WORKSPACE}/${EXEC_DEBUG} && bash \n"
