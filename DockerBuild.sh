@@ -42,7 +42,7 @@ do
             log " DockerBuild.sh comand args help"
             log ""
             log "  -D \t Folder where Dockerfile is place. By default is the calling directory."
-            log "  -d \t Folder where script will start the search of 'dockerfile.sh' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
+            log "  -d \t Folder where script will start the search of '${EXEC}', '${BUILD_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
             log "  -a \t docker build command args."
             log ""
             log ""

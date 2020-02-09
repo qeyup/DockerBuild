@@ -3,14 +3,14 @@ It will look for 'Dockerfile.sh', 'Dockerfile.buildExport.source' and 'Dockerfil
 
 
 # File description
-  * Dockerfile.sh: shell script that will be executed in a docker build step. In order to debug it, change the file name to 'Dockerfile.debug.sh'.
-  * Dockerfile.buildExport.source: Source file that will be included only in the build process.
-  * Dockerfile.imageExport.source: Source file that will be included for the docker container execution and build process.
+  * **Dockerfile.sh**: shell script that will be executed in a docker build step. In order to debug it, change the file name to 'Dockerfile.debug.sh'.
+  * **Dockerfile.buildExport.source**: Source file that will be included only in the build process.
+  * **Dockerfile.imageExport.source**: Source file that will be included for the docker container execution and build process.
 
 
 # DockerBuild.sh comand args help
     -D 	 Folder where Dockerfile is place. By default is the calling directory.
-    -d 	 Folder where script will start the search of 'dockerfile.sh' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder.
+    -d 	 Folder where script will start the search of 'Dockerfile.sh', 'Dockerfile.buildExport.source' and 'Dockerfile.imageExport.source' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder.
     -a 	 docker build command args.
 
 
