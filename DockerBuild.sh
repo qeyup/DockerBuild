@@ -13,8 +13,12 @@ SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 EXEC_SORT_KEY="Dockerfile."
 EXEC="${EXEC_SORT_KEY}sh"
 EXEC_DEBUG="${EXEC_SORT_KEY}debug.sh"
-BUILD_EXPORT_SOURCE="${EXEC_SORT_KEY}buildExport.source"
-IMAGE_EXPORT_SOURCE="${EXEC_SORT_KEY}imageExport.source"
+PRE_EXPORT="Pre"
+POST_EXPORT="Post"
+IMGAGE_EXPORT="Image"
+PRE_EXPORT_SOURCE="${EXEC_SORT_KEY}${PRE_EXPORT}Export.source"
+POST_EXPORT_SOURCE="${EXEC_SORT_KEY}${POST_EXPORT}Export.source"
+IMAGE_EXPORT_SOURCE="${EXEC_SORT_KEY}${IMGAGE_EXPORT}Export.source"
 CREATED_DOCKER_FILE=".Dockerfile"
 GENERATE_CONTENT_LABEL="# [DO NOT REMOVE THIS LINE. THIS LINE WILL BE REMPLACED WITH GENERATED CODE]"
 DEFAULT_DOCKERFILE_PATH="$PWD"
@@ -30,19 +34,20 @@ do
         # Help
         h)
             log "DockerBuild script is meant to help the docker build process. Is just a wrapper of the docker build process."
-            log "It will look for '${EXEC}', '${BUILD_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files and add them to the docker image build steps sorting them by name and nesting level position."
+            log "It will look for '${EXEC}', '${PRE_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files and add them to the docker image build steps sorting them by name and nesting level position."
             log ""
             log ""
             log "File description"
             log "  ${EXEC}: shell script that will be executed in a docker build step. In order to debug it, change the file name to '${EXEC_DEBUG}'."
-            log "  ${BUILD_EXPORT_SOURCE}: Source file that will be included only in the build process."
+            log "  ${PRE_EXPORT_SOURCE}: Source file that will be included only in the build process BEFORE execute '${EXEC}' script."
+            log "  ${POST_EXPORT_SOURCE}: Source file that will be included only in the build process AFTER execute '${EXEC}' script."
             log "  ${IMAGE_EXPORT_SOURCE}: Source file that will be included for the docker container execution and build process."
             log ""
             log ""
             log " DockerBuild.sh comand args help"
             log ""
             log "  -D \t Folder where Dockerfile is place. By default is the calling directory."
-            log "  -d \t Folder where script will start the search of '${EXEC}', '${BUILD_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
+            log "  -d \t Folder where script will start the search of '${EXEC}', '${PRE_EXPORT_SOURCE}', '${POST_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
             log "  -a \t docker build command args."
             log ""
             log ""
@@ -172,18 +177,27 @@ DOCKERFILE_CONTEND+="\n"
 
 #> Find files and sort them
 IFS=";"
-FOUND_FILES=$(find $DOCKERFILE_SCRIPTS_START_SEARCH -name "$EXEC_SORT_KEY*" | sed "s/$EXEC_SORT_KEY/$SORT_STRING/g" | sort | sed "s/$SORT_STRING/$EXEC_SORT_KEY/g" | while read file; do echo -ne "${file};"; done;)
+FOUND_FILES=$(find ${DOCKERFILE_SCRIPTS_START_SEARCH} -name "${EXEC_SORT_KEY}*" | sed "s/${EXEC_SORT_KEY}/${SORT_STRING}/g" \
+                                                                                | sed "s/${PRE_EXPORT}/1/g" \
+                                                                                | sed "s/${POST_EXPORT}/z2/g" \
+                                                                                | sed "s/${IMGAGE_EXPORT}/z3/g" \
+                                                                                | sort \
+                                                                                | sed "s/${SORT_STRING}/${EXEC_SORT_KEY}/g" \
+                                                                                | sed "s/1/${PRE_EXPORT}/g" \
+                                                                                | sed "s/z2/${POST_EXPORT}/g" \
+                                                                                | sed "s/z3/${IMGAGE_EXPORT}/g" \
+                                                                                | while read file; do echo -ne "${file};"; done;)
 
 
 #> Find build scripts
 counter=0
-for file in $FOUND_FILES
+for file in ${FOUND_FILES}
 do
     
     #> Get work dir
-    SOURCE_DIR=$(dirname "$file")
-    SOURCE_DIR=$(realpath --relative-to=$PWD "$SOURCE_DIR")
-    if  [ ! "$SOURCE_DIR" = "$LAST_SOURCE_DIR" ]
+    SOURCE_DIR=$(dirname "${file}")
+    SOURCE_DIR=$(realpath --relative-to=${PWD} "${SOURCE_DIR}")
+    if  [ ! "${SOURCE_DIR}" = "${LAST_SOURCE_DIR}" ]
     then
         LAST_SOURCE_DIR=$SOURCE_DIR
         counter=$((counter+1))
@@ -196,7 +210,7 @@ do
 
 
     #> Check debug
-    if [ "$(basename ${file})" = "$EXEC_DEBUG" ]
+    if [ "$(basename ${file})" = "${EXEC_DEBUG}" ]
     then
         DEBUG_FOLDER=$(realpath $(dirname "$file"))
         DOCKERFILE_CONTEND+="RUN cat ${BUILD_SOURCE_FILE} >> /etc/bash.bashrc\n"
@@ -207,7 +221,7 @@ do
         break
 
 
-    elif [ "$(basename ${file})" = "$EXEC" ]
+    elif [ "$(basename ${file})" = "${EXEC}" ]
     then
         #> Exec install steps
         DOCKERFILE_CONTEND+="# Building '${SOURCE_DIR}/${EXEC}'\n"
@@ -220,12 +234,25 @@ do
         log "[DOCKERFILE STEP ADDED]  ${file}"
 
 
-    elif [ "$(basename ${file})" = "$BUILD_EXPORT_SOURCE" ]
+    elif [ "$(basename ${file})" = "${PRE_EXPORT_SOURCE}" ]
     then
         #> Add source to source file
-        DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${BUILD_EXPORT_SOURCE}'\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${BUILD_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${BUILD_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}'\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${PRE_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="\n"
+        DOCKERFILE_CONTEND+="\n"
+
+        log "[BUILD SOURCE ADDED   ]  ${file}"
+
+    elif [ "$(basename ${file})" = "${POST_EXPORT_SOURCE}" ]
+    then
+        #> Add source to source file
+        DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}'\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${POST_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="\n"
@@ -234,7 +261,7 @@ do
         log "[BUILD SOURCE ADDED   ]  ${file}"
 
 
-    elif [ "$(basename ${file})" == "$IMAGE_EXPORT_SOURCE" ]
+    elif [ "$(basename ${file})" == "${IMAGE_EXPORT_SOURCE}" ]
     then
         #> Add source to source file and to bash rc file
         DOCKERFILE_CONTEND+="# Append image source file '${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}'\n"
@@ -263,7 +290,7 @@ DOCKERFILE_CONTEND+="RUN rm -rf \"${TMP_DOCKER_FOLDER}\""
 #> Put generated code in file
 cat $DOCKERFILE_PATH | while read LINE
 do
-    if [ "$LINE" = "${GENERATE_CONTENT_LABEL}" ]
+    if [ "${LINE}" = "${GENERATE_CONTENT_LABEL}" ]
     then
         echo -e "${DOCKERFILE_CONTEND}" >> ${CREATED_DOCKER_FILE}
         DOCKERFILE_CONTEND=""
@@ -272,7 +299,7 @@ do
     fi
 done
 
-
+exit
 #> root command required
 if [ "$EUID" -ne 0 ]
 then
@@ -283,12 +310,12 @@ fi
 (
     log ""
     set -x
-    bash -c "$ROOT_COMMAND docker build -t $DOCKER_IMAGE_NAME -f ${CREATED_DOCKER_FILE} ${DOCKER_BUILD_ARGS} ${DOCKER_BUILD_EXTRA_ARGS} ."
+    bash -c "${ROOT_COMMAND} docker build -t ${DOCKER_IMAGE_NAME} -f ${CREATED_DOCKER_FILE} ${DOCKER_BUILD_ARGS} ${DOCKER_BUILD_EXTRA_ARGS} ."
 )
 
 
 #> Start debug session
-if [ ! "$DEBUG_FOLDER" = "" ]
+if [ ! "${DEBUG_FOLDER}" = "" ]
 then
     (
         log ""
