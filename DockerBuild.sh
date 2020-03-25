@@ -29,7 +29,7 @@ IMAGE_SOURCE_FILE=${TMP_DOCKER_FOLDER}/bash.bashrc
 
 
 # Process args
-while getopts khd:D:a opt
+while getopts fkhd:D:a opt
 do
     case $opt in
         # Help
@@ -49,8 +49,9 @@ do
             log ""
             log "  -D \t Folder where Dockerfile is place. By default is the calling directory."
             log "  -d \t Folder where script will start the search of '${EXEC}', '${PRE_EXPORT_SOURCE}', '${POST_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
-            log "  -k \t don't remove temporal files."
-            log "  -a \t docker build command args."
+            log "  -k \t Don't remove temporal files."
+            log "  -f \t Only display script build order."
+            log "  -a \t 'docker build' command args."
             log ""
             log ""
             log "   Docker build command args help"
@@ -81,6 +82,10 @@ do
 
         k)
             KEEP_TMP_FILES=1
+        ;;
+
+        f)
+            ONLY_DISPLAY_FILE_ORDER=1
         ;;
 
         a) 
@@ -231,8 +236,8 @@ do
     elif [ "$(basename ${file})" = "${EXEC}" ]
     then
         #> Exec install steps
-        DOCKERFILE_CONTEND+="# Building '${SOURCE_DIR}/${EXEC}'\n"
-        DOCKERFILE_CONTEND+="RUN chmod u+x \"${TMP_DOCKER_FOLDER}/${counter}/${EXEC}\"\n"
+        DOCKERFILE_CONTEND+="# Building '${SOURCE_DIR}/${EXEC}' #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN chmod u+x \"${TMP_DOCKER_FOLDER}/${counter}/${EXEC}\" \n"
         DOCKERFILE_CONTEND+="RUN #\033[1;32m Building '${SOURCE_DIR}/${EXEC}'...\033[0m\n"
         DOCKERFILE_CONTEND+="RUN cd \"${TMP_DOCKER_FOLDER}/${counter}/\" && /bin/bash -c \"source ${BUILD_SOURCE_FILE} && source ${IMAGE_SOURCE_FILE} && (set -x; . ./${EXEC}); RESULT=\\\$?; if [ ! \\\$RESULT = 0 ]; then echo \\\"\033[1;35mError at '${SOURCE_DIR}/${EXEC}'\033[0m\\\"; exit -1; fi \" #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN #\033[1;32m Done!\033[0m\n"
@@ -244,10 +249,10 @@ do
     elif [ "$(basename ${file})" = "${PRE_EXPORT_SOURCE}" ]
     then
         #> Add source to source file
-        DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}'\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${PRE_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}' #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${PRE_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
 
@@ -256,10 +261,10 @@ do
     elif [ "$(basename ${file})" = "${POST_EXPORT_SOURCE}" ]
     then
         #> Add source to source file
-        DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}'\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${POST_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}' #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${POST_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
 
@@ -270,14 +275,14 @@ do
     then
         #> Add source to source file and to bash rc file
         DOCKERFILE_CONTEND+="# Append image source file '${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}'\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${IMAGE_EXPORT_SOURCE}' \" >> /etc/bash.bashrc\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/\\\"/%%%%%%%%%%quot%%%%%%%%%%/g' ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" \n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/'/%%%%%%%%%%apos%%%%%%%%%%/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" \n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${BUILD_SOURCE_FILE} && eval \\\"echo '\$(cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE})' \\\"\" >> ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/%%%%%%%%%%quot%%%%%%%%%%/\\\"/g' ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" \n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/%%%%%%%%%%apos%%%%%%%%%%/'/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" \n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" >> ${IMAGE_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> ${IMAGE_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${IMAGE_EXPORT_SOURCE}' \" >> /etc/bash.bashrc #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/\\\"/%%%%%%%%%%quot%%%%%%%%%%/g' ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/'/%%%%%%%%%%apos%%%%%%%%%%/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${BUILD_SOURCE_FILE} && eval \\\"echo '\$(cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE})' \\\"\" >> ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/%%%%%%%%%%quot%%%%%%%%%%/\\\"/g' ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/%%%%%%%%%%apos%%%%%%%%%%/'/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" >> ${IMAGE_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> ${IMAGE_SOURCE_FILE} #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
 
@@ -285,6 +290,13 @@ do
     fi
 
 done
+
+
+#> Exit if only display file order
+if [ "${ONLY_DISPLAY_FILE_ORDER}" != "" ]
+then
+    exit 0
+fi
 
 
 #> Set image export
