@@ -10,6 +10,9 @@ function log {
 #> Variables
 TMP_DOCKER_FOLDER="/tmp/docker_build"
 SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+SORT_STRING1="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+SORT_STRING2="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+SORT_STRING3="ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
 EXEC_SORT_KEY="Dockerfile."
 EXEC="${EXEC_SORT_KEY}sh"
 EXEC_DEBUG="${EXEC_SORT_KEY}debug.sh"
@@ -190,14 +193,14 @@ DOCKERFILE_CONTEND+="\n"
 #> Find files and sort them
 IFS=";"
 FOUND_FILES=$(find ${DOCKERFILE_SCRIPTS_START_SEARCH} -name "${EXEC_SORT_KEY}*" | sed "s/${EXEC_SORT_KEY}/${SORT_STRING}/g" \
-                                                                                | sed "s/${PRE_EXPORT}/1/g" \
-                                                                                | sed "s/${POST_EXPORT}/z2/g" \
-                                                                                | sed "s/${IMGAGE_EXPORT}/z3/g" \
+                                                                                | sed "s/${PRE_EXPORT}/${SORT_STRING1}/g" \
+                                                                                | sed "s/${POST_EXPORT}/${SORT_STRING2}/g" \
+                                                                                | sed "s/${IMGAGE_EXPORT}/${SORT_STRING3}/g" \
                                                                                 | sort \
                                                                                 | sed "s/${SORT_STRING}/${EXEC_SORT_KEY}/g" \
-                                                                                | sed "s/1/${PRE_EXPORT}/g" \
-                                                                                | sed "s/z2/${POST_EXPORT}/g" \
-                                                                                | sed "s/z3/${IMGAGE_EXPORT}/g" \
+                                                                                | sed "s/${SORT_STRING1}/${PRE_EXPORT}/g" \
+                                                                                | sed "s/${SORT_STRING2}/${POST_EXPORT}/g" \
+                                                                                | sed "s/${SORT_STRING3}/${IMGAGE_EXPORT}/g" \
                                                                                 | while read file; do echo -ne "${file};"; done;)
 
 
