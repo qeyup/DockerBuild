@@ -25,6 +25,7 @@ DEFAULT_DOCKERFILE_PATH="$PWD"
 DOCKER_DEBUG_FOLDER="/tmp/debug_folder"
 DOCKER_WORKSPACE="/root/workspace"
 BUILD_SOURCE_FILE=${TMP_DOCKER_FOLDER}/dockerBuild.source
+IMAGE_SOURCE_FILE=${TMP_DOCKER_FOLDER}/bash.bashrc
 
 
 # Process args
@@ -175,6 +176,7 @@ touch ${CREATED_DOCKER_FILE}
 DOCKERFILE_CONTEND+="# Make docker build folder and create an empy build source file\n"
 DOCKERFILE_CONTEND+="RUN mkdir -p \"${TMP_DOCKER_FOLDER}/\"\n"
 DOCKERFILE_CONTEND+="RUN touch \"${BUILD_SOURCE_FILE}\"\n"
+DOCKERFILE_CONTEND+="RUN touch \"${IMAGE_SOURCE_FILE}\"\n"
 DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> /etc/bash.bashrc\n"
 DOCKERFILE_CONTEND+="\n"
 DOCKERFILE_CONTEND+="\n"
@@ -273,8 +275,8 @@ do
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${BUILD_SOURCE_FILE} && eval \\\"echo '\$(cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE})' \\\"\" >> ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/%%%%%%%%%%quot%%%%%%%%%%/\\\"/g' ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" \n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/%%%%%%%%%%apos%%%%%%%%%%/'/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" \n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" >> /etc/bash.bashrc\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> /etc/bash.bashrc\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" >> ${IMAGE_SOURCE_FILE}\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> ${IMAGE_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
 
@@ -282,6 +284,10 @@ do
     fi
 
 done
+
+
+#> Set image export
+DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${IMAGE_SOURCE_FILE}\" >> /etc/bash.bashrc\n"
 
 
 #> Clean step
