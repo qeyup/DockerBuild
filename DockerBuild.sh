@@ -234,7 +234,7 @@ do
         DOCKERFILE_CONTEND+="# Building '${SOURCE_DIR}/${EXEC}'\n"
         DOCKERFILE_CONTEND+="RUN chmod u+x \"${TMP_DOCKER_FOLDER}/${counter}/${EXEC}\"\n"
         DOCKERFILE_CONTEND+="RUN echo \"Building '${SOURCE_DIR}/${EXEC}'...\"\n"
-        DOCKERFILE_CONTEND+="RUN cd \"${TMP_DOCKER_FOLDER}/${counter}/\" && /bin/bash -ex -c \"source ${BUILD_SOURCE_FILE} && ./${EXEC}\"\n"
+        DOCKERFILE_CONTEND+="RUN cd \"${TMP_DOCKER_FOLDER}/${counter}/\" && /bin/bash -ex -c \"source ${BUILD_SOURCE_FILE} && source ${IMAGE_SOURCE_FILE} && . ./${EXEC}\"\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
 
