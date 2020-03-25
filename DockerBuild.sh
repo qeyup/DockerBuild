@@ -28,7 +28,7 @@ BUILD_SOURCE_FILE=${TMP_DOCKER_FOLDER}/dockerBuild.source
 
 
 # Process args
-while getopts hd:D:a opt
+while getopts khd:D:a opt
 do
     case $opt in
         # Help
@@ -48,6 +48,7 @@ do
             log ""
             log "  -D \t Folder where Dockerfile is place. By default is the calling directory."
             log "  -d \t Folder where script will start the search of '${EXEC}', '${PRE_EXPORT_SOURCE}', '${POST_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
+            log "  -k \t don't remove temporal files."
             log "  -a \t docker build command args."
             log ""
             log ""
@@ -75,6 +76,10 @@ do
                 log "Given dir path '$DOCKERFILE_PATH' does not exists"
                 exit -1
             fi
+        ;;
+
+        k)
+            KEEP_TMP_FILES=1
         ;;
 
         a) 
@@ -233,14 +238,12 @@ do
 
         log "[DOCKERFILE STEP ADDED]  ${file}"
 
-
     elif [ "$(basename ${file})" = "${PRE_EXPORT_SOURCE}" ]
     then
         #> Add source to source file
         DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}'\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${PRE_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
@@ -254,7 +257,6 @@ do
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${POST_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE}\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
 
@@ -265,14 +267,16 @@ do
     then
         #> Add source to source file and to bash rc file
         DOCKERFILE_CONTEND+="# Append image source file '${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}'\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${IMAGE_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> ${BUILD_SOURCE_FILE}\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> ${BUILD_SOURCE_FILE}\n"
-
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${IMAGE_EXPORT_SOURCE}' \" >> /etc/bash.bashrc\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" >> /etc/bash.bashrc\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> /etc/bash.bashrc\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/\\\"/%%%quot%%%/g' ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" \n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/'/%%%apos%%%/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" \n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${BUILD_SOURCE_FILE} && eval \\\"echo '\$(cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE})' \\\"\" >> ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/%%%quot%%%/\\\"/g' ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" \n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/%%%apos%%%/'/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" \n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" >> /etc/bash.bashrc\n"
+        #DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${BUILD_SOURCE_FILE} && cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE} | sed \\\"s/\\\\\\\\\\\"/%%%quot%%%/g\\\" | while read LINE; do eval echo \${LINE}; done | sed \\\"s/%%%quot%%%/\\\\\\\\\\\"/g\\\" \" >> /etc/bash.bashrc\n"
+        #DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${BUILD_SOURCE_FILE} && cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE} | while read LINE; do echo -e \${LINE}; done  \" >> /etc/bash.bashrc\n"
+        #cat Dockerfile.ImageExport.source | sed "s/\"/%%%quot%%%/g" | while read line; do eval echo -e $line; done | sed "s/%%%quot%%%/\"/g"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> /etc/bash.bashrc\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
@@ -284,8 +288,10 @@ done
 
 
 #> Clean step
-DOCKERFILE_CONTEND+="RUN rm -rf \"${TMP_DOCKER_FOLDER}\""
-
+if [ "${KEEP_TMP_FILES}" == "" ]
+then
+    DOCKERFILE_CONTEND+="RUN rm -rf \"${TMP_DOCKER_FOLDER}\""
+fi
 
 #> Put generated code in file
 cat $DOCKERFILE_PATH | while read LINE
@@ -299,7 +305,7 @@ do
     fi
 done
 
-exit
+
 #> root command required
 if [ "$EUID" -ne 0 ]
 then
