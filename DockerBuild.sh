@@ -254,8 +254,11 @@ do
         #> Add source to source file
         DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}' #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${PRE_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN #\033[1;32m Adding source '${SOURCE_DIR}/${PRE_EXPORT_SOURCE}'...\033[0m\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}; RESULT=\\\$?; if [ ! \\\$RESULT = 0 ]; then echo \\\"\033[1;35mError at '${SOURCE_DIR}/${PRE_EXPORT_SOURCE}'\033[0m\\\"; exit -1; fi \" #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${PRE_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN #\033[1;32m Done!\033[0m\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
 
@@ -266,8 +269,11 @@ do
         #> Add source to source file
         DOCKERFILE_CONTEND+="# Append build source file '${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}' #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${POST_EXPORT_SOURCE}' \" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN #\033[1;32m Adding source '${SOURCE_DIR}/${POST_EXPORT_SOURCE}'...\033[0m\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}; RESULT=\\\$?; if [ ! \\\$RESULT = 0 ]; then echo \\\"\033[1;35mError at '${SOURCE_DIR}/${PRE_EXPORT_SOURCE}'\033[0m\\\"; exit -1; fi \" #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/${POST_EXPORT_SOURCE}\" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo \" >> ${BUILD_SOURCE_FILE} #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN #\033[1;32m Done!\033[0m\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
 
