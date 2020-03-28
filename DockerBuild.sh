@@ -19,10 +19,10 @@ EXEC="${EXEC_SORT_KEY}sh"
 EXEC_DEBUG="${EXEC_SORT_KEY}debug.sh"
 PRE_EXPORT="Pre"
 POST_EXPORT="Post"
-IMGAGE_EXPORT="Image"
+IMGAGE_EXPORT="Img"
 PRE_EXPORT_SOURCE="${EXEC_SORT_KEY}${PRE_EXPORT}Export.source"
 POST_EXPORT_SOURCE="${EXEC_SORT_KEY}${POST_EXPORT}Export.source"
-IMAGE_EXPORT_SOURCE="${EXEC_SORT_KEY}${IMGAGE_EXPORT}Export.source"
+POST_IEXPORT_SOURCE="${EXEC_SORT_KEY}${IMGAGE_EXPORT}${POST_EXPORT}Export.source"
 CREATED_DOCKER_FILE=".Dockerfile"
 GENERATE_CONTENT_LABEL="# [DO NOT REMOVE THIS LINE. THIS LINE WILL BE REMPLACED WITH GENERATED CODE]"
 DEFAULT_DOCKERFILE_PATH="$PWD"
@@ -39,20 +39,20 @@ do
         # Help
         h)
             log "DockerBuild script is meant to help the docker build process. Is just a wrapper of the docker build process."
-            log "It will look for '${EXEC}', '${PRE_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files and add them to the docker image build steps sorting them by name and nesting level position."
+            log "It will look for '${EXEC}', '${PRE_EXPORT_SOURCE}' and '${POST_IEXPORT_SOURCE}' files and add them to the docker image build steps sorting them by name and nesting level position."
             log ""
             log ""
             log "File description"
             log "  ${EXEC}: shell script that will be executed in a docker build step. In order to debug it, change the file name to '${EXEC_DEBUG}'."
             log "  ${PRE_EXPORT_SOURCE}: Source file that will be included only in the build process BEFORE execute '${EXEC}' script."
             log "  ${POST_EXPORT_SOURCE}: Source file that will be included only in the build process AFTER execute '${EXEC}' script."
-            log "  ${IMAGE_EXPORT_SOURCE}: Source file that will be included for the docker container execution and build process."
+            log "  ${POST_IEXPORT_SOURCE}: Source file that will be included for the docker container execution and build process."
             log ""
             log ""
             log " DockerBuild.sh comand args help"
             log ""
             log "  -D \t Folder where Dockerfile is place. By default is the calling directory."
-            log "  -d \t Folder where script will start the search of '${EXEC}', '${PRE_EXPORT_SOURCE}', '${POST_EXPORT_SOURCE}' and '${IMAGE_EXPORT_SOURCE}' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
+            log "  -d \t Folder where script will start the search of '${EXEC}', '${PRE_EXPORT_SOURCE}', '${POST_EXPORT_SOURCE}' and '${POST_IEXPORT_SOURCE}' files. This path can't be lower than the Dockerfile folder. By default is the Dockerfile folder."
             log "  -k \t Don't remove temporal files."
             log "  -f \t Only display script build order."
             log "  -a \t 'docker build' command args."
@@ -191,26 +191,20 @@ DOCKERFILE_CONTEND+="\n"
 DOCKERFILE_CONTEND+="\n"
 
 
-EXEC="${EXEC_SORT_KEY}sh"
-EXEC_DEBUG="${EXEC_SORT_KEY}debug.sh"
-PRE_EXPORT_SOURCE="${EXEC_SORT_KEY}${PRE_EXPORT}Export.source"
-POST_EXPORT_SOURCE="${EXEC_SORT_KEY}${POST_EXPORT}Export.source"
-IMAGE_EXPORT_SOURCE="${EXEC_SORT_KEY}${IMGAGE_EXPORT}Export.source"
-
 #> Find files and sort them
 IFS=";"
 FOUND_FILES=$(find ${DOCKERFILE_SCRIPTS_START_SEARCH} -type f -name "${EXEC}" \
                                                           -or -name "${EXEC_DEBUG}" \
                                                           -or -name "${PRE_EXPORT_SOURCE}" \
                                                           -or -name "${POST_EXPORT_SOURCE}" \
-                                                          -or -name "${IMAGE_EXPORT_SOURCE}" \
-                                                            | sed "s/${EXEC}/${SORT_STRING}/g" \
-                                                            | sed "s/${EXEC_DEBUG}/${SORT_STRING0}/g" \
-                                                            | sed "s/${PRE_EXPORT_SOURCE}/${SORT_STRING}${SORT_STRING1}/g" \
-                                                            | sed "s/${POST_EXPORT_SOURCE}/${SORT_STRING}${SORT_STRING2}/g" \
-                                                            | sed "s/${IMAGE_EXPORT_SOURCE}/${SORT_STRING}${SORT_STRING3}/g" \
+                                                          -or -name "${POST_IEXPORT_SOURCE}" \
+                                                            | sed "s/${EXEC}$/${SORT_STRING}/g" \
+                                                            | sed "s/${EXEC_DEBUG}$/${SORT_STRING0}/g" \
+                                                            | sed "s/${PRE_EXPORT_SOURCE}$/${SORT_STRING}${SORT_STRING1}/g" \
+                                                            | sed "s/${POST_EXPORT_SOURCE}$/${SORT_STRING}${SORT_STRING2}/g" \
+                                                            | sed "s/${POST_IEXPORT_SOURCE}$/${SORT_STRING}${SORT_STRING3}/g" \
                                                             | sort \
-                                                            | sed "s/${SORT_STRING}${SORT_STRING3}/${IMAGE_EXPORT_SOURCE}/g" \
+                                                            | sed "s/${SORT_STRING}${SORT_STRING3}/${POST_IEXPORT_SOURCE}/g" \
                                                             | sed "s/${SORT_STRING}${SORT_STRING2}/${POST_EXPORT_SOURCE}/g" \
                                                             | sed "s/${SORT_STRING}${SORT_STRING1}/${PRE_EXPORT_SOURCE}/g" \
                                                             | sed "s/${SORT_STRING0}/${EXEC_DEBUG}/g" \
@@ -294,22 +288,22 @@ do
         log "[BUILD SOURCE ADDED   ]  ${file}"
 
 
-    elif [ "$(basename ${file})" == "${IMAGE_EXPORT_SOURCE}" ]
+    elif [ "$(basename ${file})" == "${POST_IEXPORT_SOURCE}" ]
     then
         #> Add source to source file and to bash rc file
-        DOCKERFILE_CONTEND+="# Append image source file '${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}'\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${IMAGE_EXPORT_SOURCE}' \" >> ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc #DO_NOT_PRINT\n"
-        DOCKERFILE_CONTEND+="RUN #\033[1;32m Adding source '${SOURCE_DIR}/${IMAGE_EXPORT_SOURCE}'...\033[0m\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/\\\"/%%%%%%%%%%quot##########/g' ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" #DO_NOT_PRINT\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/'/%%%%%%%%%%apos##########/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" #DO_NOT_PRINT\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/[\\\$]/%%%%%%%%%%dolar##########/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" #DO_NOT_PRINT\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/@/\\\$/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE}\" #DO_NOT_PRINT\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${BUILD_SOURCE_FILE} && eval \\\"echo '\$(cat ${TMP_DOCKER_FOLDER}/${counter}/${IMAGE_EXPORT_SOURCE})' \\\"\" >> ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="# Append image source file '${TMP_DOCKER_FOLDER}/${counter}/${POST_IEXPORT_SOURCE}'\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo '# Source from ${SOURCE_DIR}/${POST_IEXPORT_SOURCE}' \" >> ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN #\033[1;32m Adding source '${SOURCE_DIR}/${POST_IEXPORT_SOURCE}'...\033[0m\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/\\\"/%%%%%%%%%%quot##########/g' ${TMP_DOCKER_FOLDER}/${counter}/${POST_IEXPORT_SOURCE}\" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/'/%%%%%%%%%%apos##########/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${POST_IEXPORT_SOURCE}\" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/[\\\$]/%%%%%%%%%%dolar##########/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${POST_IEXPORT_SOURCE}\" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/@/\\\$/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/${POST_IEXPORT_SOURCE}\" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${BUILD_SOURCE_FILE} && eval \\\"echo '\$(cat ${TMP_DOCKER_FOLDER}/${counter}/${POST_IEXPORT_SOURCE})' \\\"\" >> ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/[\\\$]/@/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/%%%%%%%%%%dolar##########/\\\$/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i 's/%%%%%%%%%%quot##########/\\\"/g' ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"sed -i \\\"s/%%%%%%%%%%apos##########/'/g\\\" ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" #DO_NOT_PRINT\n"
-        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc; RESULT=\\\$?; if [ ! \\\$RESULT = 0 ]; then echo \\\"\033[1;35mError at '${SOURCE_DIR}/${IMAGE_EXPORT_SOURCE}'\033[0m\\\"; exit -1; fi \" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN /bin/bash -c \"source ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc; RESULT=\\\$?; if [ ! \\\$RESULT = 0 ]; then echo \\\"\033[1;35mError at '${SOURCE_DIR}/${POST_IEXPORT_SOURCE}'\033[0m\\\"; exit -1; fi \" #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"cat ${TMP_DOCKER_FOLDER}/${counter}/bash.bashrc\" >> ${IMAGE_SOURCE_FILE} #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN /bin/bash -c \"echo\" >> ${IMAGE_SOURCE_FILE} #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN #\033[1;32m Done!\033[0m\n"
