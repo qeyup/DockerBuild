@@ -10,6 +10,7 @@ function log {
 #> Variables
 TMP_DOCKER_FOLDER="/tmp/docker_build"
 SORT_STRING="zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+SORT_STRING0="zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzD"
 SORT_STRING1="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 SORT_STRING2="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 SORT_STRING3="ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
@@ -190,25 +191,38 @@ DOCKERFILE_CONTEND+="\n"
 DOCKERFILE_CONTEND+="\n"
 
 
+EXEC="${EXEC_SORT_KEY}sh"
+EXEC_DEBUG="${EXEC_SORT_KEY}debug.sh"
+PRE_EXPORT_SOURCE="${EXEC_SORT_KEY}${PRE_EXPORT}Export.source"
+POST_EXPORT_SOURCE="${EXEC_SORT_KEY}${POST_EXPORT}Export.source"
+IMAGE_EXPORT_SOURCE="${EXEC_SORT_KEY}${IMGAGE_EXPORT}Export.source"
+
 #> Find files and sort them
 IFS=";"
-FOUND_FILES=$(find ${DOCKERFILE_SCRIPTS_START_SEARCH} -name "${EXEC_SORT_KEY}*" | sed "s/${EXEC_SORT_KEY}/${SORT_STRING}/g" \
-                                                                                | sed "s/${PRE_EXPORT}/${SORT_STRING1}/g" \
-                                                                                | sed "s/${POST_EXPORT}/${SORT_STRING2}/g" \
-                                                                                | sed "s/${IMGAGE_EXPORT}/${SORT_STRING3}/g" \
-                                                                                | sort \
-                                                                                | sed "s/${SORT_STRING}/${EXEC_SORT_KEY}/g" \
-                                                                                | sed "s/${SORT_STRING1}/${PRE_EXPORT}/g" \
-                                                                                | sed "s/${SORT_STRING2}/${POST_EXPORT}/g" \
-                                                                                | sed "s/${SORT_STRING3}/${IMGAGE_EXPORT}/g" \
-                                                                                | while read file; do echo -ne "${file};"; done;)
+FOUND_FILES=$(find ${DOCKERFILE_SCRIPTS_START_SEARCH} -type f -name "${EXEC}" \
+                                                          -or -name "${EXEC_DEBUG}" \
+                                                          -or -name "${PRE_EXPORT_SOURCE}" \
+                                                          -or -name "${POST_EXPORT_SOURCE}" \
+                                                          -or -name "${IMAGE_EXPORT_SOURCE}" \
+                                                            | sed "s/${EXEC}/${SORT_STRING}/g" \
+                                                            | sed "s/${EXEC_DEBUG}/${SORT_STRING0}/g" \
+                                                            | sed "s/${PRE_EXPORT_SOURCE}/${SORT_STRING}${SORT_STRING1}/g" \
+                                                            | sed "s/${POST_EXPORT_SOURCE}/${SORT_STRING}${SORT_STRING2}/g" \
+                                                            | sed "s/${IMAGE_EXPORT_SOURCE}/${SORT_STRING}${SORT_STRING3}/g" \
+                                                            | sort \
+                                                            | sed "s/${SORT_STRING}${SORT_STRING3}/${IMAGE_EXPORT_SOURCE}/g" \
+                                                            | sed "s/${SORT_STRING}${SORT_STRING2}/${POST_EXPORT_SOURCE}/g" \
+                                                            | sed "s/${SORT_STRING}${SORT_STRING1}/${PRE_EXPORT_SOURCE}/g" \
+                                                            | sed "s/${SORT_STRING0}/${EXEC_DEBUG}/g" \
+                                                            | sed "s/${SORT_STRING}/${EXEC}/g" \
+                                                            | while read file; do echo -ne "${file};"; done;)
 
 
 #> Find build scripts
 counter=0
 for file in ${FOUND_FILES}
 do
-    
+
     #> Get work dir
     SOURCE_DIR=$(dirname "${file}")
     SOURCE_DIR=$(realpath --relative-to=${PWD} "${SOURCE_DIR}")
