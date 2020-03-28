@@ -341,10 +341,13 @@ then
 fi
 
 #> Execute docker build
-(
-    log ""
-    bash -c "${ROOT_COMMAND} docker build -t ${DOCKER_IMAGE_NAME} -f ${CREATED_DOCKER_FILE} ${DOCKER_BUILD_ARGS} ${DOCKER_BUILD_EXTRA_ARGS} ." 2>&1 | grep -v "DO_NOT_PRINT"
-)
+log ""
+bash -c "${ROOT_COMMAND} docker build -t ${DOCKER_IMAGE_NAME} -f ${CREATED_DOCKER_FILE} ${DOCKER_BUILD_ARGS} ${DOCKER_BUILD_EXTRA_ARGS} . " 2>&1 | grep -v "DO_NOT_PRINT"
+if [ ${PIPESTATUS[0]} != 0 ]
+then
+    echo "Error!"
+    exit -1
+fi
 
 
 #> Start debug session
