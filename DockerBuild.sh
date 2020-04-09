@@ -257,7 +257,7 @@ do
         DOCKERFILE_CONTEND+="# Building '${SOURCE_DIR}/${EXEC}' #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN chmod u+x \"${TMP_DOCKER_FOLDER}/${counter}/${EXEC}\" \n"
         DOCKERFILE_CONTEND+="RUN #\033[1;32m Building '${SOURCE_DIR}/${EXEC}'...\033[0m\n"
-        DOCKERFILE_CONTEND+="RUN cd \"${TMP_DOCKER_FOLDER}/${counter}/\" && /bin/bash -c \"source ${BUILD_SOURCE_FILE} && source ${IMAGE_SOURCE_FILE} && (set -x; . ./${EXEC}); RESULT=\\\$?; if [ ! \\\$RESULT = 0 ]; then echo \\\"\033[1;35mError at '${SOURCE_DIR}/${EXEC}'\033[0m\\\"; exit -1; fi \" #DO_NOT_PRINT\n"
+        DOCKERFILE_CONTEND+="RUN cd \"${TMP_DOCKER_FOLDER}/${counter}/\" && /bin/bash -c \"source ${BUILD_SOURCE_FILE} && source ${IMAGE_SOURCE_FILE} && (set -xe; . ./${EXEC}); RESULT=\\\$?; if [ ! \\\$RESULT = 0 ]; then echo \\\"\033[1;35mError at '${SOURCE_DIR}/${EXEC}'\033[0m\\\"; exit -1; fi \" #DO_NOT_PRINT\n"
         DOCKERFILE_CONTEND+="RUN #\033[1;32m Done!\033[0m\n"
         DOCKERFILE_CONTEND+="\n"
         DOCKERFILE_CONTEND+="\n"
