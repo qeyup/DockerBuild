@@ -197,6 +197,7 @@ FOUND_FILES=$(find ${DOCKERFILE_SCRIPTS_START_SEARCH} -type f -name "*${EXEC}" \
                                                             | sed -E "s/([^/]+*${BUILD_EXPORT_SOURCE}$)/${SORT_STRING}\1/g" \
                                                             | sed -E "s/([^/]+*${IMAGE_EXPORT_SOURCE}$)/${SORT_STRING}\1/g" \
                                                             | sed -E "s/([^/]+*${DOKERFILE}$)/${SORT_STRING}\1/g" \
+                                                            | sed -E "s/([^/]+*${DOKERFILE_APPEND}$)/${SORT_STRING}\1/g" \
                                                             | sort \
                                                             | sed "s/${SORT_STRING}//g" \
                                                             | while read file; do echo -ne "${file};"; done;)
