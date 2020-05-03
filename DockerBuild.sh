@@ -356,7 +356,7 @@ then
         docker run \
                     -it \
                     --rm \
-                    --name ${DOCKER_IMAGE_NAME}_debug \
+                    --name $(echo ${DOCKER_IMAGE_NAME} | sed -e "s/:.*$//g")_debug \
                     -v ${DEBUG_FOLDER}:${DOCKER_DEBUG_FOLDER} \
                     -w ${DOCKER_WORKSPACE} \
                     ${DOCKER_IMAGE_NAME}
