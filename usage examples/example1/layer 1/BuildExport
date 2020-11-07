@@ -1,0 +1,7 @@
+export BUILD_EXPORT_1="BUILD_EXPORT_n1"
+
+
+buildFunction()(
+    echo "Test"
+)
+export -f buildFunction
