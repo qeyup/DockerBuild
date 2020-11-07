@@ -1,0 +1,18 @@
+FROM ubuntu:18.04
+
+
+########################################
+# Docker image name
+#DB DOCKER_IMAGE_NAME=example_nested_image_A
+
+# Docker build defined args
+#DB DOCKER_BUILD_ARGS=
+
+########################################
+
+# [DO NOT REMOVE THIS LINE. THIS LINE WILL BE REMPLACED WITH GENERATED CODE]
+
+
+WORKDIR /root/
+
+
