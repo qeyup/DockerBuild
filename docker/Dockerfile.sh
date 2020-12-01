@@ -18,3 +18,6 @@ PACKAGES=()
 PACKAGES+=(sdist)
 PACKAGES+=(twine)
 pip3 install ${PACKAGES[@]}
+
+# Fix
+pip3 install --upgrade keyrings.alt
