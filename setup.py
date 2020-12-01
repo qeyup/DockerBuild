@@ -17,4 +17,9 @@ if __name__ == '__main__':
         packages=packages,
         entry_points=entries,
         data_files=data_files,
+        author="Javier Moreno",
+        author_email="jgmore@gmail.com",
+        description="Docker image build tool",
+        long_description_content_type="text/markdown",
+        url="https://github.com/qeyup/DockerBuild",
     )

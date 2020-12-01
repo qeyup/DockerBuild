@@ -19,7 +19,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.0.6"
+version="0.0.7"
 
 
 # Global vars
