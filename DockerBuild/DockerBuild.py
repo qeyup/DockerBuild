@@ -722,7 +722,7 @@ def addDebugStep(file, root_dir):
 
     layer_lines = list()
     layer_lines.append("# Build step '%s'..." % file)
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
+    layer_lines.append("RUN %s %s \"%s/%s\" \"%s\"" %
         (image_build_script, debug_tag, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
