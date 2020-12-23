@@ -41,7 +41,6 @@ debug_tag="Debug"
 created_docker_file=".BuildFile"
 created_docker_script=".BuildScript"
 
-dockerfile="Dockerfile"
 docker_file_name="DockerBuild"
 docker_file_name_list=[docker_file_name, "Dockerfile"]
 
@@ -1114,10 +1113,7 @@ def main(argv=sys.argv[1:]):
                 # Get file name and path
                 file_path = os.path.dirname(image_info.dockerfile_path)
                 if args.gen_dockerfile == "":
-                    if os.path.isfile(os.path.join(file_path, dockerfile)):
-                        file_name=genImageBuildName(image_info)
-                    else:
-                        file_name=dockerfile
+                    file_name=genImageBuildName(image_info)
                 else:
                     file_name=args.gen_dockerfile
 
