@@ -8,6 +8,7 @@ import argparse
 import os
 import sys
 import re
+import shutil
 import glob
 import requests
 import subprocess
@@ -1135,6 +1136,12 @@ def main(argv=sys.argv[1:]):
 
             # Exit if dry-build
             if args.dry_build:
+                continue
+
+
+            # Skip if docker is not installed
+            if shutil.which("docker") is None:
+                log.error("Cant build '%s'. Docker is not installed." % (genImageBuildName(image_info)))
                 continue
 
 
