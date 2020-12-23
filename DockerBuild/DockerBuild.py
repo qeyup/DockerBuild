@@ -807,7 +807,7 @@ def addLoadImageSource():
 
     layer_lines = list()
     layer_lines.append("# Add Load image source ...")
-    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
+    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
 
     return "\n".join(layer_lines) + "\n\n\n"
 
@@ -1100,11 +1100,13 @@ def main(argv=sys.argv[1:]):
             # Remplace generated content
             image_info.dockerfile_content = image_info.dockerfile_content.replace(image_generate_code_tag, docker_file_content)
             image_info.dockerfile_content = re.sub("%s.*\n" % image_from_tag, "", image_info.dockerfile_content)
-            image_info.dockerfile_content = "%s %s\n%s" % (image_from_tag, image_info.direct_image_from, image_info.dockerfile_content)
+            image_info.dockerfile_content = "%s %s\n\n%s\n\n" % (image_from_tag, image_info.direct_image_from, image_info.dockerfile_content)
             if Add_entrypoint_script:
                 image_info.dockerfile_content += addLoadEntrypoints()
+                image_info.dockerfile_content += "\n\n"
             if debug_file == "" :
                 image_info.dockerfile_content += addCleanWorkingDir(args.keep_tmp_files, image_info.name)
+                image_info.dockerfile_content += "\n\n"
 
             # Display generated dockerfile
             if args.gen_dockerfile is not None:
