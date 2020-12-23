@@ -42,7 +42,8 @@ created_docker_file=".BuildFile"
 created_docker_script=".BuildScript"
 
 dockerfile="Dockerfile"
-docker_file_name="Dockerfile"
+docker_file_name="DockerBuild"
+docker_file_name_list=[docker_file_name, "Dockerfile"]
 
 source_file_extension="Sources"
 source_file_extension_list=[source_file_extension, "RequiredSources"]
@@ -410,6 +411,7 @@ class image_info_t:
     name = str()
     tag = str()
     image_id = str()
+    has_replace_tag = False
     image_from = list()
     not_found_image_from = list()
     direct_image_from = str()
@@ -433,6 +435,9 @@ def checkIfDockerfileRoot(full_path):
     for file in listOfFile:
         if file.endswith(docker_file_name):
             return True
+        for name in docker_file_name_list:
+            if file.endswith(name):
+                return True
     return False
 
 # Get all files
@@ -575,6 +580,11 @@ def getImagePaths(dir_path):
         else:
             if entry.endswith(docker_file_name):
                 image_paths.append(full_path)
+            else:
+                for name in docker_file_name_list:
+                    if entry.endswith(name):
+                        image_paths.append(full_path)
+                        break
 
     return image_paths
 
@@ -934,6 +944,9 @@ def main(argv=sys.argv[1:]):
                     image_info.name = image_full_name
                     image_info.tag = ""
 
+            # Check if DockerBuild file
+            elif file_line == image_generate_code_tag:
+                image_info.has_replace_tag=True
 
             # Get docker build args
             elif file_line.startswith(image_build_args_tag):
@@ -954,8 +967,9 @@ def main(argv=sys.argv[1:]):
         docker_build_files = getDockerBuildFiles(os.path.dirname(docker_file_path))
         image_info.layers_files = relativePath(sortFoundFiles(docker_build_files), os.path.dirname(docker_file_path))
 
-        # Save dats
-        images_info.append(image_info)
+        # Save data
+        if image_info.has_replace_tag:
+            images_info.append(image_info)
 
 
     # Get images
