@@ -19,7 +19,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.0.7"
+version="0.0.8"
 
 
 # Global vars
@@ -41,6 +41,7 @@ debug_tag="Debug"
 created_docker_file=".BuildFile"
 created_docker_script=".BuildScript"
 
+dockerfile="Dockerfile"
 docker_file_name="Dockerfile"
 
 source_file_extension="Sources"
@@ -855,9 +856,11 @@ def main(argv=sys.argv[1:]):
         help='Download source in local dir')
     parser.add_argument(
         '--gen-dockerfile',
+        metavar = "FILE_NAME",
         required=False,
-        action="store_true",
-        help='Display generated dockerfile')
+        nargs='?',
+        const="",
+        help='Generate dockerfile')
     parser.add_argument(
         '--create-new-dockerfile',
         metavar = "PATH",
@@ -1090,10 +1093,32 @@ def main(argv=sys.argv[1:]):
                 image_info.dockerfile_content += addCleanWorkingDir(args.keep_tmp_files, image_info.name)
 
             # Display generated dockerfile
-            if args.gen_dockerfile:
-                log.trace("\n\n------ Gen dockerfile (%s) ------\n" % log.colorStr(log.fg.lightgrey, image_info.dockerfile_path))
-                log.trace(image_info.dockerfile_content)
-                log.trace("----------------------------\n")
+            if args.gen_dockerfile is not None:
+
+                # Get file name and path
+                file_path = os.path.dirname(image_info.dockerfile_path)
+                if args.gen_dockerfile == "":
+                    if os.path.isfile(os.path.join(file_path, dockerfile)):
+                        file_name=genImageBuildName(image_info)
+                    else:
+                        file_name=dockerfile
+                else:
+                    file_name=args.gen_dockerfile
+
+                # Check file path
+                if not os.path.isdir(file_path):
+                    log.error("Can't create '%s' at '%s'. Directory does not exists." % (file_name, file_path))
+                    return -1
+
+                # Check if file exits
+                if os.path.isfile(os.path.join(file_path,file_name)):
+                    log.error("Can't create '%s' at '%s'. File exists." % (file_name, file_path))
+                    return -1
+
+
+                # Create file
+                open(os.path.join(file_path,file_name), 'w').write(image_info.dockerfile_content)
+                continue
 
 
             # Exit if dry-build
