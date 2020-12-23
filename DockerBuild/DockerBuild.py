@@ -23,6 +23,10 @@ import pdb # pdb.set_trace()
 version="0.0.8"
 
 
+# Platform
+is_windows = hasattr(sys, 'getwindowsversion')
+
+
 # Global vars
 image_from_tag="FROM "
 image_name_tag="#DB DOCKER_IMAGE_NAME="
@@ -360,39 +364,76 @@ bash
 class log:
 
     class mode:
-        reset='\033[0m'
-        ireset='\033[00m'
-        bold='\033[01m'
-        disable='\033[02m'
-        underline='\033[04m'
-        reverse='\033[07m'
-        strikethrough='\033[09m'
-        invisible='\033[08m'
+        if is_windows:
+            reset=''
+            ireset=''
+            bold=''
+            disable=''
+            underline=''
+            reverse=''
+            strikethrough=''
+            invisible=''
+        else:
+            reset='\033[0m'
+            ireset='\033[00m'
+            bold='\033[01m'
+            disable='\033[02m'
+            underline='\033[04m'
+            reverse='\033[07m'
+            strikethrough='\033[09m'
+            invisible='\033[08m'
     class fg:
-        black='\033[30m'
-        red='\033[31m'
-        green='\033[32m'
-        orange='\033[33m'
-        blue='\033[34m'
-        purple='\033[35m'
-        cyan='\033[36m'
-        lightgrey='\033[37m'
-        darkgrey='\033[90m'
-        lightred='\033[91m'
-        lightgreen='\033[92m'
-        yellow='\033[93m'
-        lightblue='\033[94m'
-        pink='\033[95m'
-        lightcyan='\033[96m'
+        if is_windows:
+            black=''
+            red=''
+            green=''
+            orange=''
+            blue=''
+            purple=''
+            cyan=''
+            lightgrey=''
+            darkgrey=''
+            lightred=''
+            lightgreen=''
+            yellow=''
+            lightblue=''
+            pink=''
+            lightcyan=''
+        else:
+            black='\033[30m'
+            red='\033[31m'
+            green='\033[32m'
+            orange='\033[33m'
+            blue='\033[34m'
+            purple='\033[35m'
+            cyan='\033[36m'
+            lightgrey='\033[37m'
+            darkgrey='\033[90m'
+            lightred='\033[91m'
+            lightgreen='\033[92m'
+            yellow='\033[93m'
+            lightblue='\033[94m'
+            pink='\033[95m'
+            lightcyan='\033[96m'
     class bg:
-        black='\033[40m'
-        red='\033[41m'
-        green='\033[42m'
-        orange='\033[43m'
-        blue='\033[44m'
-        purple='\033[45m'
-        cyan='\033[46m'
-        lightgrey='\033[47m'
+        if is_windows:
+            black=''
+            red=''
+            green=''
+            orange=''
+            blue=''
+            purple=''
+            cyan=''
+            lightgrey=''
+        else:
+            black='\033[40m'
+            red='\033[41m'
+            green='\033[42m'
+            orange='\033[43m'
+            blue='\033[44m'
+            purple='\033[45m'
+            cyan='\033[46m'
+            lightgrey='\033[47m'
 
     def colorStr(color, string):
         return color + string.replace(log.mode.reset, log.mode.ireset + color) + log.mode.reset
@@ -1166,14 +1207,21 @@ def main(argv=sys.argv[1:]):
                         open(os.path.join(source.image_path, source.file), 'wb').write(download_file.content)
 
 
-            # Build docker image
+            # build build string
             final_image_name=genImageBuildName(image_info, debug_file != "")
-            cmd=["bash", "-c", "sudo docker build -t %s -f %s ." % (final_image_name, created_docker_file)]
+            command_string = "docker build -t %s -f %s" % (final_image_name, created_docker_file)
             if image_info.build_args != "":
-                cmd.append(image_info.build_args)
+                command_string += image_info.build_args + " "
             if args.docker_build_args != "":
-                cmd.append(args.docker_build_args)
-            cmd.append(".")
+                command_string += args.docker_build_args + " "
+            command_string += " ."
+
+
+            # Build docker image
+            if is_windows:
+                cmd=["cmd", "/C", "%s" % command_string]
+            else:
+                cmd=["bash", "-c", "sudo %s" % command_string]
             p = subprocess.Popen(cmd, cwd=os.path.dirname(image_info.dockerfile_path))
             p.communicate()
             if p.returncode != 0:
