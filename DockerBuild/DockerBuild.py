@@ -697,7 +697,7 @@ needToDownloadchecks.append(checkLocalPartFileExits)
 # dockerbuild layers
 def addBuildTools(image_path):
 
-    open(os.path.join(image_path, created_docker_script), 'w').write(layer_build_script)
+    open(os.path.join(image_path, created_docker_script), 'w', newline='\n').write(layer_build_script)
     layer_lines = list()
     layer_lines.append("# Add required scripts ...")
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (created_docker_script, image_build_script))
