@@ -15,6 +15,7 @@ import subprocess
 import copy
 from hashlib import blake2b
 from enum import Enum
+from pathlib import Path
 
 import pdb # pdb.set_trace()
 
@@ -707,7 +708,7 @@ def addBuildTools(image_path):
 def getRequiedSources(image_path, file, root_dir, local_download):
     class source_t : pass
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
 
     # Read source data from file
     full_file_path = os.path.join(image_path, file)
@@ -753,40 +754,54 @@ def getRequiedSources(image_path, file, root_dir, local_download):
                 part_files = ""
                 for part_file in files:
                     file_name = os.path.basename(part_file)
-                    part_files+="\"%s\", " % (os.path.join(rel_path, file_name))
+                    file_rel_path = Path(os.path.join(rel_path, file_name)).as_posix()
+                    part_files+="\"%s\", " % (file_rel_path)
                 if part_files != "":
-                    layer_lines.append("COPY [%s\"%s%s/\"]" % (part_files, current_image_working_dir, rel_path))
+                    out_path=Path("%s/%s" % (current_image_working_dir, rel_path)).as_posix()
+                    layer_lines.append("COPY [%s\"%s/\"]" % (part_files, out_path))
                     file_part_type=part_ext
                     break
             if file_part_type == "":
-                layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (source.file, current_image_working_dir, source.file))
+                out_path = Path("%s/%s" % (current_image_working_dir, source.file)).as_posix()
+                source_path = Path(source.file).as_posix()
+                layer_lines.append("COPY [\"%s\", \"%s\"]" % (source_path, out_path))
             else:
-                layer_lines.append("RUN cat \"%s%s.%s\"* > \"%s%s\" && rm \"%s%s.%s\"*"
-                    % (current_image_working_dir, source.file, file_part_type, current_image_working_dir, source.file, current_image_working_dir, source.file, file_part_type))
+                out_path=Path("%s/%s" % (current_image_working_dir, source.file)).as_posix()
+                layer_lines.append("RUN cat \"%s.%s\"* > \"%s\" && rm \"%s.%s\"*"
+                    % (out_path, file_part_type, out_path, out_path, file_part_type))
         else:
-            layer_lines.append("ADD [\"%s\", \"%s%s\"]" % (source.uri, current_image_working_dir, source.file))
+            out_path=Path("%s/%s" % (current_image_working_dir, source.file)).as_posix()
+            layer_lines.append("ADD [\"%s\", \"%s\"]" % (source.uri, out_path))
 
     return source_list, "\n".join(layer_lines) + "\n\n\n"
 
 def addDebugStep(file, root_dir):
 
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
     current_image_working_dir = image_working_dir + "/" + root_dir
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Build step '%s'..." % file)
-    layer_lines.append("RUN %s %s \"%s/%s\" \"%s\"" %
-        (image_build_script, debug_tag, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("RUN mkdir -p \"%s\"" % (working_path))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, debug_tag, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addBuildStep(file, root_dir):
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
+    out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Build step '%s'..." % file)
-    layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (file, current_image_working_dir, file))
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, exec_extension, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, exec_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addCleanWorkingDir(keep, image_name):
@@ -813,13 +828,17 @@ def addLoadEntrypoints():
 
 def addEntrypoint(file, root_dir):
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
+    out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Entrypoint '%s'..." % file)
-    layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (file, current_image_working_dir, file))
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, entrypoint_extension, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, entrypoint_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addRawAppend(image_path, file):
@@ -835,13 +854,17 @@ def addRawAppend(image_path, file):
 
 def addBuildSource(file, root_dir):
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
+    out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Build source '%s'..." % file)
-    layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (file, current_image_working_dir, file))
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, build_export_source_extension, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, build_export_source_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addLoadImageSource():
@@ -854,13 +877,17 @@ def addLoadImageSource():
 
 def addImageSource(file, root_dir):
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
+    out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Build source '%s'..." % file)
-    layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (file, current_image_working_dir, file))
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, image_export_source_extension, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, image_export_source_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 
