@@ -1165,9 +1165,9 @@ def main(argv=sys.argv[1:]):
                     return -1
 
                 # Check if file exits
-                if os.path.isfile(os.path.join(file_path,file_name)):
-                    log.error("Can't create '%s' at '%s'. File exists." % (file_name, file_path))
-                    return -1
+                #if os.path.isfile(os.path.join(file_path,file_name)):
+                #    log.error("Can't create '%s' at '%s'. File exists." % (file_name, file_path))
+                #    return -1
 
 
                 # Create file
