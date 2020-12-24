@@ -547,7 +547,7 @@ def getImagesDeps(image_info, images_info):
     for image_dep in image_info.image_from:
         dep_found = False
         for image in images_info:
-            if image_dep == image.name:
+            if image_dep == genImageBuildName(image):
                 image_deps_list += getImagesDeps(image, images_info)
                 image_deps_list.append(image)
                 dep_found = True
@@ -555,12 +555,14 @@ def getImagesDeps(image_info, images_info):
 
         if dep_found == False:
             image_info.not_found_image_from.append(image_dep)
+        else:
+            break
 
     # Clean duplications
     for image in image_deps_list:
         already_added = False
         for aux_image in image_deps_dup_list:
-            if aux_image.name == image.name:
+            if aux_image.name == genImageBuildName(image):
                 already_added = True
                 break
         if already_added == False:
