@@ -1215,7 +1215,7 @@ def main(argv=sys.argv[1:]):
 
             # Geneate file
             open(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_file), 'w').write(image_info.dockerfile_content)
-            open(os.path.join(image_path, created_docker_script), 'w').write(layer_build_script)
+            open(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_script), 'w').write(layer_build_script)
 
 
             # Download sources
