@@ -1193,7 +1193,7 @@ def main(argv=sys.argv[1:]):
                 # Get file name and path
                 file_path = os.path.dirname(image_info.dockerfile_path)
                 if args.gen_dockerfile == "":
-                    file_name=genImageBuildName(image_info)
+                    file_name=genImageBuildName(image_info).replace(":", ".") + ".Dockerfile"
                 else:
                     file_name=args.gen_dockerfile
 
