@@ -78,10 +78,13 @@ source_part_extensions = [
     "part"
 ]
 
-
 # Description help
+short_description="DockerBuild is a 'dockerfile' file generation tools. It converts a file hierarchy tree into a dockerfile."
 gen_description = '''
-DockerBuild v%s. Util for docker build process.
+
+Version: %s
+
+%s
 
 Files types:
 
@@ -93,7 +96,7 @@ Files types:
     - (*)%s: Append dockerfile raw layers.
 
 
-''' % (version, source_file_extension, exec_extension, dokerfile_append_extension, build_export_source_extension, entrypoint_extension, image_export_source_extension)
+''' % (version, short_description, source_file_extension, exec_extension, dokerfile_append_extension, build_export_source_extension, entrypoint_extension, image_export_source_extension)
 
 # Dockerfile template
 docker_file_template = '''
