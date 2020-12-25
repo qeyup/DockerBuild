@@ -1,11 +1,12 @@
-usage: DockerBuild [-h] [--dry-build] [--display-full-path]
-                   [--debug ['Dockerfile.sh' path]] [--main-path [PATH]]
-                   [--keep-tmp-files] [--download-in-local] [--gen-dockerfile]
-                   [--create-new-dockerfile [PATH]]
-                   [--docker-build-args [ARGS]]
-                   [--source-part EXTENSIONS [EXTENSIONS ...]]
+usage: DockerBuild.py [-h] [--dry-build] [--display-full-path]
+                      [--debug ['Dockerfile.sh' path]] [--main-path [PATH]]
+                      [--keep-tmp-files] [--download-in-local]
+                      [--gen-dockerfile [FILE_NAME]]
+                      [--create-new-dockerfile [PATH]]
+                      [--docker-build-args [ARGS]]
+                      [--source-part EXTENSIONS [EXTENSIONS ...]]
 
-DockerBuild v0.0.6. Util for docker build process.
+DockerBuild v0.0.8. Util for docker build process.
 
 Files types:
 
@@ -25,7 +26,8 @@ optional arguments:
   --main-path [PATH]    Debug at FILE
   --keep-tmp-files      Dont remove temporal files
   --download-in-local   Download source in local dir
-  --gen-dockerfile      Display generated dockerfile
+  --gen-dockerfile [FILE_NAME]
+                        Generate dockerfile
   --create-new-dockerfile [PATH]
                         Create new dockerfile
   --docker-build-args [ARGS]
