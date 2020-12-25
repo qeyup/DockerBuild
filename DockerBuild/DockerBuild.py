@@ -116,7 +116,7 @@ FROM ubuntu:18.04
 
 
 # Build layer script
-layer_build_script = '''#!/bin/bash
+layer_build_script = '''
 
 set -o pipefail
 
@@ -699,9 +699,20 @@ needToDownloadchecks.append(checkLocalPartFileExits)
 
 # dockerbuild layers
 def addBuildTools(image_path):
+
+    # Convert build script to dockerfile input
+    script_lines = layer_build_script.split("\n")
+    add_scrip_layer="mkdir -p %s && \\\n" % (Path(os.path.dirname(image_build_script)).as_posix())
+    add_scrip_layer+="echo \"#!/bin/bash\" >> %s && \\\n" % (image_build_script)
+    for line in script_lines:
+        line = line.replace("\"", "\\\"")
+        line = line.replace("$", "\$")
+        add_scrip_layer+="echo \"%s\" >> %s && \\\n" % (line, image_build_script)
+    add_scrip_layer+="echo \"\" >> %s" % (image_build_script)
+
     layer_lines = list()
     layer_lines.append("# Add required scripts ...")
-    layer_lines.append("COPY [\"%s\", \"%s\"]" % (created_docker_script, image_build_script))
+    layer_lines.append("RUN %s" % (add_scrip_layer))
     layer_lines.append("RUN chmod u+x %s" % (image_build_script))
     return "\n".join(layer_lines) + "\n\n\n"
 
@@ -1215,7 +1226,6 @@ def main(argv=sys.argv[1:]):
 
             # Geneate file
             open(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_file), 'w').write(image_info.dockerfile_content)
-            open(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_script), 'w').write(layer_build_script)
 
 
             # Download sources
@@ -1259,7 +1269,6 @@ def main(argv=sys.argv[1:]):
 
             # Clean
             os.remove(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_file))
-            os.remove(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_script))
 
 
             # Debug
