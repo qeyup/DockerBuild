@@ -8,18 +8,24 @@ import argparse
 import os
 import sys
 import re
+import shutil
 import glob
 import requests
 import subprocess
 import copy
 from hashlib import blake2b
 from enum import Enum
+from pathlib import Path
 
 import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.0.7"
+version="0.0.8"
+
+
+# Platform
+is_windows = hasattr(sys, 'getwindowsversion')
 
 
 # Global vars
@@ -41,7 +47,8 @@ debug_tag="Debug"
 created_docker_file=".BuildFile"
 created_docker_script=".BuildScript"
 
-docker_file_name="Dockerfile"
+docker_file_name="DockerBuild"
+docker_file_name_list=[docker_file_name, "Dockerfile"]
 
 source_file_extension="Sources"
 source_file_extension_list=[source_file_extension, "RequiredSources"]
@@ -109,7 +116,7 @@ FROM ubuntu:18.04
 
 
 # Build layer script
-layer_build_script = '''#!/bin/bash
+layer_build_script = '''
 
 set -o pipefail
 
@@ -358,39 +365,76 @@ bash
 class log:
 
     class mode:
-        reset='\033[0m'
-        ireset='\033[00m'
-        bold='\033[01m'
-        disable='\033[02m'
-        underline='\033[04m'
-        reverse='\033[07m'
-        strikethrough='\033[09m'
-        invisible='\033[08m'
+        if is_windows:
+            reset=''
+            ireset=''
+            bold=''
+            disable=''
+            underline=''
+            reverse=''
+            strikethrough=''
+            invisible=''
+        else:
+            reset='\033[0m'
+            ireset='\033[00m'
+            bold='\033[01m'
+            disable='\033[02m'
+            underline='\033[04m'
+            reverse='\033[07m'
+            strikethrough='\033[09m'
+            invisible='\033[08m'
     class fg:
-        black='\033[30m'
-        red='\033[31m'
-        green='\033[32m'
-        orange='\033[33m'
-        blue='\033[34m'
-        purple='\033[35m'
-        cyan='\033[36m'
-        lightgrey='\033[37m'
-        darkgrey='\033[90m'
-        lightred='\033[91m'
-        lightgreen='\033[92m'
-        yellow='\033[93m'
-        lightblue='\033[94m'
-        pink='\033[95m'
-        lightcyan='\033[96m'
+        if is_windows:
+            black=''
+            red=''
+            green=''
+            orange=''
+            blue=''
+            purple=''
+            cyan=''
+            lightgrey=''
+            darkgrey=''
+            lightred=''
+            lightgreen=''
+            yellow=''
+            lightblue=''
+            pink=''
+            lightcyan=''
+        else:
+            black='\033[30m'
+            red='\033[31m'
+            green='\033[32m'
+            orange='\033[33m'
+            blue='\033[34m'
+            purple='\033[35m'
+            cyan='\033[36m'
+            lightgrey='\033[37m'
+            darkgrey='\033[90m'
+            lightred='\033[91m'
+            lightgreen='\033[92m'
+            yellow='\033[93m'
+            lightblue='\033[94m'
+            pink='\033[95m'
+            lightcyan='\033[96m'
     class bg:
-        black='\033[40m'
-        red='\033[41m'
-        green='\033[42m'
-        orange='\033[43m'
-        blue='\033[44m'
-        purple='\033[45m'
-        cyan='\033[46m'
-        lightgrey='\033[47m'
+        if is_windows:
+            black=''
+            red=''
+            green=''
+            orange=''
+            blue=''
+            purple=''
+            cyan=''
+            lightgrey=''
+        else:
+            black='\033[40m'
+            red='\033[41m'
+            green='\033[42m'
+            orange='\033[43m'
+            blue='\033[44m'
+            purple='\033[45m'
+            cyan='\033[46m'
+            lightgrey='\033[47m'
 
     def colorStr(color, string):
         return color + string.replace(log.mode.reset, log.mode.ireset + color) + log.mode.reset
@@ -409,6 +453,7 @@ class image_info_t:
     name = str()
     tag = str()
     image_id = str()
+    has_replace_tag = False
     image_from = list()
     not_found_image_from = list()
     direct_image_from = str()
@@ -432,6 +477,9 @@ def checkIfDockerfileRoot(full_path):
     for file in listOfFile:
         if file.endswith(docker_file_name):
             return True
+        for name in docker_file_name_list:
+            if file.endswith(name):
+                return True
     return False
 
 # Get all files
@@ -499,7 +547,7 @@ def getImagesDeps(image_info, images_info):
     for image_dep in image_info.image_from:
         dep_found = False
         for image in images_info:
-            if image_dep == image.name:
+            if image_dep == genImageBuildName(image):
                 image_deps_list += getImagesDeps(image, images_info)
                 image_deps_list.append(image)
                 dep_found = True
@@ -507,12 +555,14 @@ def getImagesDeps(image_info, images_info):
 
         if dep_found == False:
             image_info.not_found_image_from.append(image_dep)
+        else:
+            break
 
     # Clean duplications
     for image in image_deps_list:
         already_added = False
         for aux_image in image_deps_dup_list:
-            if aux_image.name == image.name:
+            if aux_image.name == genImageBuildName(image):
                 already_added = True
                 break
         if already_added == False:
@@ -574,6 +624,11 @@ def getImagePaths(dir_path):
         else:
             if entry.endswith(docker_file_name):
                 image_paths.append(full_path)
+            else:
+                for name in docker_file_name_list:
+                    if entry.endswith(name):
+                        image_paths.append(full_path)
+                        break
 
     return image_paths
 
@@ -645,17 +700,26 @@ needToDownloadchecks.append(checkLocalPartFileExits)
 # dockerbuild layers
 def addBuildTools(image_path):
 
-    open(os.path.join(image_path, created_docker_script), 'w').write(layer_build_script)
+    # Convert build script to dockerfile input
+    script_lines = layer_build_script.split("\n")
+    add_scrip_layer="mkdir -p %s && \\\n" % (Path(os.path.dirname(image_build_script)).as_posix())
+    add_scrip_layer+="echo \"#!/bin/bash\" >> %s && \\\n" % (image_build_script)
+    for line in script_lines:
+        line = line.replace("\"", "\\\"")
+        line = line.replace("$", "\$")
+        add_scrip_layer+="echo \"%s\" >> %s && \\\n" % (line, image_build_script)
+    add_scrip_layer+="echo \"\" >> %s" % (image_build_script)
+
     layer_lines = list()
     layer_lines.append("# Add required scripts ...")
-    layer_lines.append("COPY [\"%s\", \"%s\"]" % (created_docker_script, image_build_script))
+    layer_lines.append("RUN %s" % (add_scrip_layer))
     layer_lines.append("RUN chmod u+x %s" % (image_build_script))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def getRequiedSources(image_path, file, root_dir, local_download):
     class source_t : pass
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
 
     # Read source data from file
     full_file_path = os.path.join(image_path, file)
@@ -701,40 +765,54 @@ def getRequiedSources(image_path, file, root_dir, local_download):
                 part_files = ""
                 for part_file in files:
                     file_name = os.path.basename(part_file)
-                    part_files+="\"%s\", " % (os.path.join(rel_path, file_name))
+                    file_rel_path = Path(os.path.join(rel_path, file_name)).as_posix()
+                    part_files+="\"%s\", " % (file_rel_path)
                 if part_files != "":
-                    layer_lines.append("COPY [%s\"%s%s/\"]" % (part_files, current_image_working_dir, rel_path))
+                    out_path=Path("%s/%s" % (current_image_working_dir, rel_path)).as_posix()
+                    layer_lines.append("COPY [%s\"%s/\"]" % (part_files, out_path))
                     file_part_type=part_ext
                     break
             if file_part_type == "":
-                layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (source.file, current_image_working_dir, source.file))
+                out_path = Path("%s/%s" % (current_image_working_dir, source.file)).as_posix()
+                source_path = Path(source.file).as_posix()
+                layer_lines.append("COPY [\"%s\", \"%s\"]" % (source_path, out_path))
             else:
-                layer_lines.append("RUN cat \"%s%s.%s\"* > \"%s%s\" && rm \"%s%s.%s\"*"
-                    % (current_image_working_dir, source.file, file_part_type, current_image_working_dir, source.file, current_image_working_dir, source.file, file_part_type))
+                out_path=Path("%s/%s" % (current_image_working_dir, source.file)).as_posix()
+                layer_lines.append("RUN cat \"%s.%s\"* > \"%s\" && rm \"%s.%s\"*"
+                    % (out_path, file_part_type, out_path, out_path, file_part_type))
         else:
-            layer_lines.append("ADD [\"%s\", \"%s%s\"]" % (source.uri, current_image_working_dir, source.file))
+            out_path=Path("%s/%s" % (current_image_working_dir, source.file)).as_posix()
+            layer_lines.append("ADD [\"%s\", \"%s\"]" % (source.uri, out_path))
 
     return source_list, "\n".join(layer_lines) + "\n\n\n"
 
 def addDebugStep(file, root_dir):
 
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
     current_image_working_dir = image_working_dir + "/" + root_dir
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Build step '%s'..." % file)
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, debug_tag, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("RUN mkdir -p \"%s\"" % (working_path))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, debug_tag, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addBuildStep(file, root_dir):
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
+    out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Build step '%s'..." % file)
-    layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (file, current_image_working_dir, file))
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, exec_extension, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, exec_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addCleanWorkingDir(keep, image_name):
@@ -761,13 +839,17 @@ def addLoadEntrypoints():
 
 def addEntrypoint(file, root_dir):
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
+    out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Entrypoint '%s'..." % file)
-    layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (file, current_image_working_dir, file))
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, entrypoint_extension, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, entrypoint_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addRawAppend(image_path, file):
@@ -783,32 +865,40 @@ def addRawAppend(image_path, file):
 
 def addBuildSource(file, root_dir):
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
+    out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Build source '%s'..." % file)
-    layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (file, current_image_working_dir, file))
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, build_export_source_extension, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, build_export_source_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addLoadImageSource():
 
     layer_lines = list()
     layer_lines.append("# Add Load image source ...")
-    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
+    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
 
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addImageSource(file, root_dir):
 
-    current_image_working_dir = image_working_dir + root_dir + "/"
+    file = Path(file).as_posix()
+    root_dir = Path(root_dir).as_posix()
+    current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
+    out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
+    working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
     layer_lines.append("# Build source '%s'..." % file)
-    layer_lines.append("COPY [\"%s\", \"%s%s\"]" % (file, current_image_working_dir, file))
-    layer_lines.append("RUN %s %s \"%s%s\" \"%s\"" %
-        (image_build_script, image_export_source_extension, current_image_working_dir, os.path.dirname(file), os.path.basename(file)))
+    layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+        (image_build_script, image_export_source_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
 
@@ -855,9 +945,11 @@ def main(argv=sys.argv[1:]):
         help='Download source in local dir')
     parser.add_argument(
         '--gen-dockerfile',
+        metavar = "FILE_NAME",
         required=False,
-        action="store_true",
-        help='Display generated dockerfile')
+        nargs='?',
+        const="",
+        help='Generate dockerfile')
     parser.add_argument(
         '--create-new-dockerfile',
         metavar = "PATH",
@@ -931,6 +1023,9 @@ def main(argv=sys.argv[1:]):
                     image_info.name = image_full_name
                     image_info.tag = ""
 
+            # Check if DockerBuild file
+            elif file_line == image_generate_code_tag:
+                image_info.has_replace_tag=True
 
             # Get docker build args
             elif file_line.startswith(image_build_args_tag):
@@ -951,8 +1046,9 @@ def main(argv=sys.argv[1:]):
         docker_build_files = getDockerBuildFiles(os.path.dirname(docker_file_path))
         image_info.layers_files = relativePath(sortFoundFiles(docker_build_files), os.path.dirname(docker_file_path))
 
-        # Save dats
-        images_info.append(image_info)
+        # Save data
+        if image_info.has_replace_tag:
+            images_info.append(image_info)
 
 
     # Get images
@@ -1083,21 +1179,48 @@ def main(argv=sys.argv[1:]):
             # Remplace generated content
             image_info.dockerfile_content = image_info.dockerfile_content.replace(image_generate_code_tag, docker_file_content)
             image_info.dockerfile_content = re.sub("%s.*\n" % image_from_tag, "", image_info.dockerfile_content)
-            image_info.dockerfile_content = "%s %s\n%s" % (image_from_tag, image_info.direct_image_from, image_info.dockerfile_content)
+            image_info.dockerfile_content = "%s %s\n\n%s\n\n" % (image_from_tag, image_info.direct_image_from, image_info.dockerfile_content)
             if Add_entrypoint_script:
                 image_info.dockerfile_content += addLoadEntrypoints()
+                image_info.dockerfile_content += "\n\n"
             if debug_file == "" :
                 image_info.dockerfile_content += addCleanWorkingDir(args.keep_tmp_files, image_info.name)
+                image_info.dockerfile_content += "\n\n"
 
             # Display generated dockerfile
-            if args.gen_dockerfile:
-                log.trace("\n\n------ Gen dockerfile (%s) ------\n" % log.colorStr(log.fg.lightgrey, image_info.dockerfile_path))
-                log.trace(image_info.dockerfile_content)
-                log.trace("----------------------------\n")
+            if args.gen_dockerfile is not None:
+
+                # Get file name and path
+                file_path = os.path.dirname(image_info.dockerfile_path)
+                if args.gen_dockerfile == "":
+                    file_name=genImageBuildName(image_info).replace(":", ".") + ".Dockerfile"
+                else:
+                    file_name=args.gen_dockerfile
+
+                # Check file path
+                if not os.path.isdir(file_path):
+                    log.error("Can't create '%s' at '%s'. Directory does not exists." % (file_name, file_path))
+                    return -1
+
+                # Check if file exits
+                #if os.path.isfile(os.path.join(file_path,file_name)):
+                #    log.error("Can't create '%s' at '%s'. File exists." % (file_name, file_path))
+                #    return -1
+
+
+                # Create file
+                open(os.path.join(file_path,file_name), 'w').write(image_info.dockerfile_content)
+                continue
 
 
             # Exit if dry-build
             if args.dry_build:
+                continue
+
+
+            # Skip if docker is not installed
+            if shutil.which("docker") is None:
+                log.error("Cant build '%s'. Docker is not installed." % (genImageBuildName(image_info)))
                 continue
 
 
@@ -1122,14 +1245,21 @@ def main(argv=sys.argv[1:]):
                         open(os.path.join(source.image_path, source.file), 'wb').write(download_file.content)
 
 
-            # Build docker image
+            # build build string
             final_image_name=genImageBuildName(image_info, debug_file != "")
-            cmd=["bash", "-c", "sudo docker build -t %s -f %s ." % (final_image_name, created_docker_file)]
+            command_string = "docker build -t %s -f %s" % (final_image_name, created_docker_file)
             if image_info.build_args != "":
-                cmd.append(image_info.build_args)
+                command_string += image_info.build_args + " "
             if args.docker_build_args != "":
-                cmd.append(args.docker_build_args)
-            cmd.append(".")
+                command_string += args.docker_build_args + " "
+            command_string += " ."
+
+
+            # Build docker image
+            if is_windows:
+                cmd=["cmd", "/C", "%s" % command_string]
+            else:
+                cmd=["bash", "-c", "sudo %s" % command_string]
             p = subprocess.Popen(cmd, cwd=os.path.dirname(image_info.dockerfile_path))
             p.communicate()
             if p.returncode != 0:
@@ -1139,7 +1269,6 @@ def main(argv=sys.argv[1:]):
 
             # Clean
             os.remove(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_file))
-            os.remove(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_script))
 
 
             # Debug
