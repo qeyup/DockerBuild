@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.0.8"
+version="0.1.0"
 
 
 # Platform
@@ -96,7 +96,7 @@ Files types:
     - (*)%s: Append dockerfile raw layers.
 
 
-''' % (version, short_description, source_file_extension, exec_extension, dokerfile_append_extension, build_export_source_extension, entrypoint_extension, image_export_source_extension)
+''' % (version, short_description, source_file_extension, exec_extension, image_export_source_extension, build_export_source_extension, entrypoint_extension, dokerfile_append_extension)
 
 # Dockerfile template
 docker_file_template = '''

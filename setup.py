@@ -9,19 +9,7 @@ entries = {'console_scripts': ['DockerBuild=DockerBuild.DockerBuild:main']}
 packages = ['DockerBuild']
 data_files = []
 install_requires=[
-    'argparse',
-    'argparse',
-    'os',
-    'sys',
-    're',
-    'shutil',
-    'glob',
-    'requests',
-    'subprocess',
-    'copy',
-    'hashlib'
-    'enum'
-    'pathlib'
+    'requests'
 ]
 description=DockerBuild.short_description
 long_description=DockerBuild.gen_description

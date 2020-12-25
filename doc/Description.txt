@@ -6,16 +6,18 @@ usage: DockerBuild.py [-h] [--dry-build] [--display-full-path]
                       [--docker-build-args [ARGS]]
                       [--source-part EXTENSIONS [EXTENSIONS ...]]
 
-DockerBuild v0.0.8. Util for docker build process.
+Version: 0.0.8
+
+DockerBuild is a 'dockerfile' file generation tools. It converts a file hierarchy tree into a dockerfile.
 
 Files types:
 
     - Sources: Source files to be downlaoded.
     - (*)Dockerfile.sh: shell script that will be executed in a docker build step.
-    - (*)DockerfileAppend: Source file that will be included only in the build process.
+    - (*)ImageExport: Source file that will be included only in the build process.
     - (*)BuildExport: Source file that will be included to the docker container execution and build process. All @{*} variables will be replaced with the variable value.
     - (*)Entrypoint.sh: Entrypoint shell script.
-    - (*)ImageExport: Append dockerfile raw layers.
+    - (*)DockerfileAppend: Append dockerfile raw layers.
 
 optional arguments:
   -h, --help            show this help message and exit
