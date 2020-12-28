@@ -536,8 +536,21 @@ def genImageBuildName(image_info, debug=False):
     debug_string=""
     if debug:
         debug_string = "debug"
-    if image_info.tag != "" or image_info.image_id != "" or debug_string != "":
-        final_image_name+=":%s%s%s" % (image_info.tag, image_info.image_id,debug_string)
+
+    def addTag(current_tag,tag):
+        if tag == "":
+            return current_tag
+        elif current_tag == "":
+            return tag
+        else:
+            return "%s_%s" % (current_tag, tag)
+
+    final_tag=""
+    final_tag=addTag(final_tag, image_info.tag)
+    final_tag=addTag(final_tag, image_info.image_id)
+    final_tag=addTag(final_tag, debug_string)
+    if final_tag != "":
+        final_image_name+=":%s" % (final_tag)
     return final_image_name
 
 # Get imgage deps
