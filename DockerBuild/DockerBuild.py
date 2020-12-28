@@ -147,7 +147,7 @@ replaceVariables(){
     FILE="${1}"
 
     # Load sources
-    for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null); do
+    for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null | sort); do
         source "${SOURCE_FILE}"
     done
 
@@ -206,7 +206,7 @@ buildStep(){
 
     # exec
     (
-        for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null); do
+        for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null | sort); do
             source "${SOURCE_FILE}"
         done
         set -x
@@ -355,7 +355,7 @@ esac
 # Entrypoint script
 run_entrypoint_script = '''#!/bin/bash
 
-for entrypoint_file in $(find %s -type f); do
+for entrypoint_file in $(find %s -type f | sort); do
     $entrypoint_file &
 done
 
@@ -536,8 +536,21 @@ def genImageBuildName(image_info, debug=False):
     debug_string=""
     if debug:
         debug_string = "debug"
-    if image_info.tag != "" or image_info.image_id != "" or debug_string != "":
-        final_image_name+=":%s%s%s" % (image_info.tag, image_info.image_id,debug_string)
+
+    def addTag(current_tag,tag):
+        if tag == "":
+            return current_tag
+        elif current_tag == "":
+            return tag
+        else:
+            return "%s_%s" % (current_tag, tag)
+
+    final_tag=""
+    final_tag=addTag(final_tag, image_info.tag)
+    final_tag=addTag(final_tag, image_info.image_id)
+    final_tag=addTag(final_tag, debug_string)
+    if final_tag != "":
+        final_image_name+=":%s" % (final_tag)
     return final_image_name
 
 # Get imgage deps
@@ -885,7 +898,7 @@ def addLoadImageSource():
 
     layer_lines = list()
     layer_lines.append("# Add Load image source ...")
-    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
+    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null | sort); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
 
     return "\n".join(layer_lines) + "\n\n\n"
 
@@ -1116,7 +1129,7 @@ def main(argv=sys.argv[1:]):
 
                 file_name = os.path.basename(docker_build_file)
                 full_path = os.path.join(os.path.dirname(image_info.dockerfile_path), docker_build_file)
-                image_current_folder=image_info.name
+                image_current_folder=genImageBuildName(image_info)
 
                 if args.display_full_path:
                     display_name = full_path
