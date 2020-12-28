@@ -147,7 +147,7 @@ replaceVariables(){
     FILE="${1}"
 
     # Load sources
-    for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null); do
+    for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null | sort); do
         source "${SOURCE_FILE}"
     done
 
@@ -206,7 +206,7 @@ buildStep(){
 
     # exec
     (
-        for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null); do
+        for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null | sort); do
             source "${SOURCE_FILE}"
         done
         set -x
@@ -355,7 +355,7 @@ esac
 # Entrypoint script
 run_entrypoint_script = '''#!/bin/bash
 
-for entrypoint_file in $(find %s -type f); do
+for entrypoint_file in $(find %s -type f | sort); do
     $entrypoint_file &
 done
 
@@ -898,7 +898,7 @@ def addLoadImageSource():
 
     layer_lines = list()
     layer_lines.append("# Add Load image source ...")
-    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
+    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null | sort); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
 
     return "\n".join(layer_lines) + "\n\n\n"
 
