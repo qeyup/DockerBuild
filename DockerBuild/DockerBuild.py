@@ -1116,7 +1116,7 @@ def main(argv=sys.argv[1:]):
 
                 file_name = os.path.basename(docker_build_file)
                 full_path = os.path.join(os.path.dirname(image_info.dockerfile_path), docker_build_file)
-                image_current_folder=image_info.name
+                image_current_folder=genImageBuildName(image_info)
 
                 if args.display_full_path:
                     display_name = full_path
