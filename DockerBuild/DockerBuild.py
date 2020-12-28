@@ -151,6 +151,8 @@ replaceVariables(){
         source "${SOURCE_FILE}"
     done
 
+    # Add end line
+    echo "" >> "${FILE}"
 
     # Replace @ variables
     cat "${FILE}" | while read LINE
