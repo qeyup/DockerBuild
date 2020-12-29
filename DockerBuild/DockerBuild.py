@@ -573,8 +573,6 @@ def getImagesDeps(image_info, images_info):
 
         if dep_found == False:
             image_info.not_found_image_from.append(image_dep)
-        else:
-            break
 
     # Clean duplications
     for image in image_deps_list:
