@@ -1,12 +1,13 @@
-usage: DockerBuild.py [-h] [--dry-build] [--display-full-path]
-                      [--debug ['Dockerfile.sh' path]] [--main-path [PATH]]
-                      [--keep-tmp-files] [--download-in-local]
-                      [--gen-dockerfile [FILE_NAME]]
-                      [--create-new-dockerfile [PATH]]
-                      [--docker-build-args [ARGS]]
-                      [--source-part EXTENSIONS [EXTENSIONS ...]]
+usage: DockerBuild [-h] [--dry-build] [--display-full-path]
+                   [--debug ['Dockerfile.sh' path]] [--main-path [PATH]]
+                   [--keep-tmp-files] [--download-in-local]
+                   [--gen-dockerfile [FILE_NAME]]
+                   [--create-new-dockerfile [PATH]]
+                   [--docker-build-args [ARGS]]
+                   [--source-part EXTENSIONS [EXTENSIONS ...]]
+                   [--docker-build-files PATHS [PATHS ...]]
 
-Version: 0.0.8
+Version: 0.2.0
 
 DockerBuild is a 'dockerfile' file generation tools. It converts a file hierarchy tree into a dockerfile.
 
@@ -36,3 +37,5 @@ optional arguments:
                         Docker build command args
   --source-part EXTENSIONS [EXTENSIONS ...]
                         Source part extensions
+  --docker-build-files PATHS [PATHS ...]
+                        Paths of the docker build files
