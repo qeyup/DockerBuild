@@ -357,13 +357,19 @@ esac
 # Entrypoint script
 run_entrypoint_script = '''#!/bin/bash
 
+# Load sources
+for SOURCE_FILE in $(cd / && find %s -type f 2>/dev/null | sort); do
+    source "${SOURCE_FILE}"
+done
+
+# Load all entrypoints
 for entrypoint_file in $(find %s -type f | sort); do
     $entrypoint_file &
 done
 
 bash
 
-''' % (image_entrypoint_folder)
+''' % (image_source_folder, image_entrypoint_folder)
 
 
 # Log
