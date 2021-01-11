@@ -992,6 +992,12 @@ def main(argv=sys.argv[1:]):
         required=False,
         nargs='+',
         help='Source part extensions')
+    parser.add_argument(
+        '--docker-build-files',
+        metavar = "PATHS",
+        required=False,
+        nargs='+',
+        help='Paths of the docker build files')
     args = parser.parse_args(argv)
 
 
@@ -1004,6 +1010,15 @@ def main(argv=sys.argv[1:]):
         global source_part_extensions 
         source_part_extensions+=args.source_part
 
+
+    # Check paths
+    if args.docker_build_files is not None:
+        abs_main_path = os.path.abspath(args.main_path)
+        for docker_build_file in args.docker_build_files:
+            abs_docker_build_file = os.path.abspath(docker_build_file)
+            if not abs_docker_build_file.startswith(abs_main_path):
+                log.error("Invalid given docker build path")
+                return -1
 
     # Find images
     docker_images_path = getImagePaths(args.main_path)
@@ -1076,7 +1091,18 @@ def main(argv=sys.argv[1:]):
     # Get images
     images_to_build = list()
     for image_info in images_info:
-        if os.path.dirname(image_info.dockerfile_path) == args.main_path:
+        is_main_image = False
+        if args.docker_build_files is not None:
+            dockerfile_abs_path = os.path.abspath(image_info.dockerfile_path)
+            for docker_build_file in args.docker_build_files:
+                abs_docker_build_file = os.path.abspath(docker_build_file)
+                if dockerfile_abs_path == abs_docker_build_file:
+                    is_main_image = True
+                    break
+        elif os.path.dirname(image_info.dockerfile_path) == args.main_path:
+            is_main_image = True
+
+        if is_main_image:
             nested_images_to_build = list()
             nested_images_to_build += getImagesDeps(image_info, images_info)
             nested_images_to_build.append(copy.deepcopy(image_info))
