@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.1.0"
+version="0.2.0"
 
 
 # Platform
@@ -147,10 +147,12 @@ replaceVariables(){
     FILE="${1}"
 
     # Load sources
-    for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null); do
+    for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null | sort); do
         source "${SOURCE_FILE}"
     done
 
+    # Add end line
+    echo "" >> "${FILE}"
 
     # Replace @ variables
     cat "${FILE}" | while read LINE
@@ -206,7 +208,7 @@ buildStep(){
 
     # exec
     (
-        for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null); do
+        for SOURCE_FILE in $(cd / && find $BUILD_SOURCE_DIR -type f 2>/dev/null | sort); do
             source "${SOURCE_FILE}"
         done
         set -x
@@ -355,13 +357,19 @@ esac
 # Entrypoint script
 run_entrypoint_script = '''#!/bin/bash
 
-for entrypoint_file in $(find %s -type f); do
+# Load sources
+for SOURCE_FILE in $(cd / && find %s -type f 2>/dev/null | sort); do
+    source "${SOURCE_FILE}"
+done
+
+# Load all entrypoints
+for entrypoint_file in $(find %s -type f | sort); do
     $entrypoint_file &
 done
 
 bash
 
-''' % (image_entrypoint_folder)
+''' % (image_source_folder, image_entrypoint_folder)
 
 
 # Log
@@ -536,8 +544,21 @@ def genImageBuildName(image_info, debug=False):
     debug_string=""
     if debug:
         debug_string = "debug"
-    if image_info.tag != "" or image_info.image_id != "" or debug_string != "":
-        final_image_name+=":%s%s%s" % (image_info.tag, image_info.image_id,debug_string)
+
+    def addTag(current_tag,tag):
+        if tag == "":
+            return current_tag
+        elif current_tag == "":
+            return tag
+        else:
+            return "%s_%s" % (current_tag, tag)
+
+    final_tag=""
+    final_tag=addTag(final_tag, image_info.tag)
+    final_tag=addTag(final_tag, image_info.image_id)
+    final_tag=addTag(final_tag, debug_string)
+    if final_tag != "":
+        final_image_name+=":%s" % (final_tag)
     return final_image_name
 
 # Get imgage deps
@@ -558,8 +579,6 @@ def getImagesDeps(image_info, images_info):
 
         if dep_found == False:
             image_info.not_found_image_from.append(image_dep)
-        else:
-            break
 
     # Clean duplications
     for image in image_deps_list:
@@ -885,7 +904,7 @@ def addLoadImageSource():
 
     layer_lines = list()
     layer_lines.append("# Add Load image source ...")
-    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
+    layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null | sort); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
 
     return "\n".join(layer_lines) + "\n\n\n"
 
@@ -973,6 +992,12 @@ def main(argv=sys.argv[1:]):
         required=False,
         nargs='+',
         help='Source part extensions')
+    parser.add_argument(
+        '--docker-build-files',
+        metavar = "PATHS",
+        required=False,
+        nargs='+',
+        help='Paths of the docker build files')
     args = parser.parse_args(argv)
 
 
@@ -985,6 +1010,15 @@ def main(argv=sys.argv[1:]):
         global source_part_extensions 
         source_part_extensions+=args.source_part
 
+
+    # Check paths
+    if args.docker_build_files is not None:
+        abs_main_path = os.path.abspath(args.main_path)
+        for docker_build_file in args.docker_build_files:
+            abs_docker_build_file = os.path.abspath(docker_build_file)
+            if not abs_docker_build_file.startswith(abs_main_path):
+                log.error("Invalid given docker build path")
+                return -1
 
     # Find images
     docker_images_path = getImagePaths(args.main_path)
@@ -1057,7 +1091,18 @@ def main(argv=sys.argv[1:]):
     # Get images
     images_to_build = list()
     for image_info in images_info:
-        if os.path.dirname(image_info.dockerfile_path) == args.main_path:
+        is_main_image = False
+        if args.docker_build_files is not None:
+            dockerfile_abs_path = os.path.abspath(image_info.dockerfile_path)
+            for docker_build_file in args.docker_build_files:
+                abs_docker_build_file = os.path.abspath(docker_build_file)
+                if dockerfile_abs_path == abs_docker_build_file:
+                    is_main_image = True
+                    break
+        elif os.path.dirname(image_info.dockerfile_path) == args.main_path:
+            is_main_image = True
+
+        if is_main_image:
             nested_images_to_build = list()
             nested_images_to_build += getImagesDeps(image_info, images_info)
             nested_images_to_build.append(copy.deepcopy(image_info))
@@ -1116,7 +1161,7 @@ def main(argv=sys.argv[1:]):
 
                 file_name = os.path.basename(docker_build_file)
                 full_path = os.path.join(os.path.dirname(image_info.dockerfile_path), docker_build_file)
-                image_current_folder=image_info.name
+                image_current_folder=genImageBuildName(image_info)
 
                 if args.display_full_path:
                     display_name = full_path
