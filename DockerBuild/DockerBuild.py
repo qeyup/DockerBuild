@@ -201,7 +201,7 @@ replaceVariables(){
 
 CRLF_2_LF(){
     FILE="${1}"
-    sed -i 's/\r$//' "${FILE}"
+    sed -i 's/\\r$//' "${FILE}"
 }
 
 buildStep(){
