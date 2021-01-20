@@ -89,14 +89,21 @@ Version: %s
 Files types:
 
     - %s: Source files to be downlaoded.
-    - (*)%s: shell script that will be executed in a docker build step.
-    - (*)%s: Source file that will be included only in the build process.
-    - (*)%s: Source file that will be included to the docker container execution and build process. All @{*} variables will be replaced with the variable value.
-    - (*)%s: Entrypoint shell script.
-    - (*)%s: Append dockerfile raw layers.
 
+    - (*)%s: Executed script in a docker build step.
 
-''' % (version, short_description, source_file_extension, exec_extension, image_export_source_extension, build_export_source_extension, entrypoint_extension, dokerfile_append_extension)
+    - (*)%s: Source file included only in the build process.
+
+    - (*)%s: Source file included in the container and build process.
+
+    - (*)%s: Entrypoint.
+
+    - (*)%s: Dockerfile raw append.
+
+    Note: All @{*} variables will be replaced with the variable value before adding '(*)%s', '(*)%s' and '(*)%s'.
+''' % (version, short_description, source_file_extension, exec_extension, image_export_source_extension,
+        build_export_source_extension, entrypoint_extension, dokerfile_append_extension, image_export_source_extension,
+        build_export_source_extension, entrypoint_extension)
 
 # Dockerfile template
 docker_file_template = '''
