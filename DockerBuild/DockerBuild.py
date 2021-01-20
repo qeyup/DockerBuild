@@ -199,11 +199,18 @@ replaceVariables(){
     fi
 }
 
+CRLF_2_LF(){
+    FILE="${1}"
+    sed -i 's/\r$//' "${FILE}"
+}
+
 buildStep(){
 
     mv "${EXEC_PATH}" "${CURRENT_WORKING_PATH}"
 
     cd "${CURRENT_WORKING_PATH}"
+
+    CRLF_2_LF "${EXEC_FILE}"
     chmod u+x "${EXEC_FILE}"
 
     # exec
@@ -240,6 +247,7 @@ buildSource(){
 
     # Repace variables
     replaceVariables "${FILE}"
+    CRLF_2_LF "${FILE}"
 
     # Copiar
     cp "${FILE}" "${BUILD_SOURCE_DIR}/${BUILD_SOURCE_NAME}"
@@ -284,6 +292,7 @@ imageSource(){
 
     # Repace variables
     replaceVariables "${FILE}"
+    CRLF_2_LF "${FILE}"
 
     # Copiar
     cp "${FILE}" "${IMAGE_SOURCE_DIR}/${IMAGE_SOURCE_NAME}"
@@ -320,6 +329,7 @@ entryPoint(){
 
     # Repace variables
     replaceVariables "${FILE}"
+    CRLF_2_LF "${FILE}"
 
     # Copiar
     cp "${FILE}" "${ENTRYPOINT_DIR}/${ENTRYPOINT_NAME}"
