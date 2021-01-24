@@ -354,7 +354,9 @@ debugFile(){
 
     rm -rf ${IMAGE_SOURCE_DIR}
 
-    ln -s ${BUILD_SOURCE_DIR} ${IMAGE_SOURCE_DIR}
+    if [ -d ${BUILD_SOURCE_DIR} ]; then
+        ln -s ${BUILD_SOURCE_DIR} ${IMAGE_SOURCE_DIR}
+    fi
     ln -s "%s/${EXEC_FILE}" "${CURRENT_WORKING_PATH}/${EXEC_FILE}"
 }
 
@@ -380,7 +382,7 @@ for SOURCE_FILE in $(cd / && find %s -type f 2>/dev/null | sort); do
 done
 
 # Load all entrypoints
-for entrypoint_file in $(find %s -type f | sort); do
+for entrypoint_file in $(cd / && find %s -type f 2>/dev/null | sort); do
     $entrypoint_file &
 done
 
