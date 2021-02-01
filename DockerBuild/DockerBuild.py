@@ -1002,8 +1002,7 @@ def main(argv=sys.argv[1:]):
         '--docker-build-args',
         metavar = "ARGS",
         required=False,
-        default="",
-        nargs='?',
+        nargs='+',
         help='Docker build command args')
     parser.add_argument(
         '--source-part',
@@ -1318,8 +1317,10 @@ def main(argv=sys.argv[1:]):
         command_string = "docker build -t %s -f %s" % (final_image_name, os.path.basename(main_image_info.dockerfile_path))
         if main_image_info.build_args != "":
             command_string += main_image_info.build_args + " "
-        if args.docker_build_args != "":
-            command_string += args.docker_build_args + " "
+        if args.docker_build_args is not None:
+            command_string += " "
+            for arg in args.docker_build_args:
+                command_string += arg.replace("+","-") + " "
         command_string += " ."
 
 
