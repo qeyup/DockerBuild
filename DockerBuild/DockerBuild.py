@@ -992,13 +992,6 @@ def main(argv=sys.argv[1:]):
         action="store_true",
         help='Download source in local dir')
     parser.add_argument(
-        '--gen-dockerfile',
-        metavar = "FILE_NAME",
-        required=False,
-        nargs='?',
-        const="",
-        help='Generate dockerfile')
-    parser.add_argument(
         '--create-new-dockerfile',
         metavar = "PATH",
         required=False,
@@ -1286,32 +1279,6 @@ def main(argv=sys.argv[1:]):
 
         # Remplace generated content
         main_image_info.dockerfile_content = main_image_info.dockerfile_content.replace(image_generate_code_tag, all_generated_content)
-
-
-        # Display generated dockerfile
-        if args.gen_dockerfile is not None:
-
-            # Get file name and path
-            file_path = os.path.dirname(main_image_info.dockerfile_path)
-            if args.gen_dockerfile == "":
-                file_name=genImageBuildName(main_image_info).replace(":", ".") + ".Dockerfile"
-            else:
-                file_name=args.gen_dockerfile
-
-            # Check file path
-            if not os.path.isdir(file_path):
-                log.error("Can't create '%s' at '%s'. Directory does not exists." % (file_name, file_path))
-                return -1
-
-            # Check if file exits
-            #if os.path.isfile(os.path.join(file_path,file_name)):
-            #    log.error("Can't create '%s' at '%s'. File exists." % (file_name, file_path))
-            #    return -1
-
-
-            # Create file
-            open(os.path.join(file_path, file_name), 'w').write(main_image_info.dockerfile_content)
-            continue
 
 
         # Exit if dry-build
