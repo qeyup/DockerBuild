@@ -29,7 +29,6 @@ is_windows = hasattr(sys, 'getwindowsversion')
 
 
 # Global vars
-image_from_tag="FROM "
 image_include_tag="#DB INCLUDE "
 image_name_tag="#DB DOCKER_IMAGE_NAME="
 image_build_args_tag="#DB DOCKER_BUILD_ARGS="
@@ -496,12 +495,12 @@ class image_info_t:
     tag = str()
     image_id = str()
     has_replace_tag = False
-    image_from = list()
+    image_include = list()
     not_found_image_from = list()
-    direct_image_from = str()
     external_image_from = str()
     build_args = str()
     dockerfile_path = str()
+    dockerfile_generated = str()
     dockerfile_content = str()
     layers_files = list()
 
@@ -599,7 +598,7 @@ def getImagesDeps(image_info, images_info):
     image_info.not_found_image_from = list()
 
     # Add deps
-    for image_dep in image_info.image_from:
+    for image_dep in image_info.image_include:
         dep_found = False
         for image in images_info:
             if image_dep == genImageBuildName(image):
@@ -764,7 +763,7 @@ def addBuildTools(image_path):
     add_scrip_layer+="echo \"\" >> %s" % (image_build_script)
 
     layer_lines = list()
-    layer_lines.append("# Add required scripts ...")
+    layer_lines.append("# Add required scripts")
     layer_lines.append("RUN %s" % (add_scrip_layer))
     layer_lines.append("RUN chmod u+x %s" % (image_build_script))
     return "\n".join(layer_lines) + "\n\n\n"
@@ -801,7 +800,7 @@ def getRequiedSources(image_path, file, root_dir, local_download):
 
     # Check list
     layer_lines = list()
-    layer_lines.append("# Required sources '%s'..." % file)
+    layer_lines.append("# Required sources '%s'" % file)
     for source in source_list:
         aux_local_download = local_download
         if not aux_local_download:
@@ -847,7 +846,7 @@ def addDebugStep(file, root_dir):
     working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
-    layer_lines.append("# Build step '%s'..." % file)
+    layer_lines.append("# Build step '%s'" % file)
     layer_lines.append("RUN mkdir -p \"%s\"" % (working_path))
     layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
         (image_build_script, debug_tag, working_path, os.path.basename(file)))
@@ -862,7 +861,7 @@ def addBuildStep(file, root_dir):
     working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
-    layer_lines.append("# Build step '%s'..." % file)
+    layer_lines.append("# Build step '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
     layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
         (image_build_script, exec_extension, working_path, os.path.basename(file)))
@@ -870,7 +869,7 @@ def addBuildStep(file, root_dir):
 
 def addCleanWorkingDir(keep, image_name):
     layer_lines = list()
-    layer_lines.append("# Add clean workspace ...")
+    layer_lines.append("# Add clean workspace")
     if not keep:
         layer_lines.append("RUN rm -rf %s" % (image_working_dir))
 
@@ -878,14 +877,14 @@ def addCleanWorkingDir(keep, image_name):
 
 def addLoadEntrypointsScript():
     layer_lines = list()
-    layer_lines.append("# Add Load all entrypoints script ...")
+    layer_lines.append("# Add Load all entrypoints script")
     layer_lines.append("RUN %s && chmod u+x %s" % (fileContentToEcho(run_entrypoint_script, image_entrypoint_file), image_entrypoint_file))
 
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addLoadEntrypoints():
     layer_lines = list()
-    layer_lines.append("# Add Load all entrypoints ...")
+    layer_lines.append("# Add Load all entrypoints")
     layer_lines.append("ENTRYPOINT [\"%s\"]" % (image_entrypoint_file))
 
     return "\n".join(layer_lines) + "\n\n\n"
@@ -899,7 +898,7 @@ def addEntrypoint(file, root_dir):
     working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
-    layer_lines.append("# Entrypoint '%s'..." % file)
+    layer_lines.append("# Entrypoint '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
     layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
         (image_build_script, entrypoint_extension, working_path, os.path.basename(file)))
@@ -911,7 +910,7 @@ def addRawAppend(image_path, file):
     full_file_path = os.path.join(image_path, file)
     source_data_file = open(full_file_path, "r")
     layer_lines = list()
-    layer_lines.append("# Raw append '%s'..." % file)
+    layer_lines.append("# Raw append '%s'" % file)
     for file_line in source_data_file:
         layer_lines.append(file_line)
     return "\n".join(layer_lines) + "\n\n\n"
@@ -925,7 +924,7 @@ def addBuildSource(file, root_dir):
     working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
-    layer_lines.append("# Build source '%s'..." % file)
+    layer_lines.append("# Build source '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
     layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
         (image_build_script, build_export_source_extension, working_path, os.path.basename(file)))
@@ -934,7 +933,7 @@ def addBuildSource(file, root_dir):
 def addLoadImageSource():
 
     layer_lines = list()
-    layer_lines.append("# Add Load image source ...")
+    layer_lines.append("# Add Load image source")
     layer_lines.append("RUN echo \"for source_file in \$(find -L %s -type f 2> /dev/null | sort); do source \$source_file; done\" >> /etc/bash.bashrc" % (image_source_folder))
 
     return "\n".join(layer_lines) + "\n\n\n"
@@ -948,7 +947,7 @@ def addImageSource(file, root_dir):
     working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
     layer_lines = list()
-    layer_lines.append("# Build source '%s'..." % file)
+    layer_lines.append("# Build source '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
     layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
         (image_build_script, image_export_source_extension, working_path, os.path.basename(file)))
@@ -1063,7 +1062,7 @@ def main(argv=sys.argv[1:]):
 
         # Init data
         image_info = image_info_t()
-        image_info.image_from = list()
+        image_info.image_include = list()
         image_info.dockerfile_path = docker_file_path
 
 
@@ -1099,8 +1098,9 @@ def main(argv=sys.argv[1:]):
             file_line = file_line.replace("\r", "")
 
             # Get from
-            if file_line.startswith(image_from_tag):
-                image_info.image_from.append(file_line.replace(image_from_tag, "").lower())
+            if file_line.startswith(image_include_tag):
+                image_info.image_include.append(file_line.replace(image_include_tag, ""))
+
 
             # Get image name
             elif file_line.startswith(image_name_tag):
@@ -1161,47 +1161,14 @@ def main(argv=sys.argv[1:]):
             images_to_build.append(nested_images_to_build)
 
 
-    # Calculate direct dep and external dep
-    for image_to_build in images_to_build:
-        external_Dep = ""
-        last_dep = ""
-        hash_calculation = ""
-        for image_info in image_to_build:
-            if external_Dep == "":
-                if len(image_info.image_from) == 0:
-                    log.error("From Image not found for '%s'" % (image_info.dockerfile_path))
-                    return -1
-                hash_calculation = image_info.image_from[0]
-                h = blake2b(digest_size=4)
-                h.update(bytes(hash_calculation, 'utf-8'))
-                image_info.image_id = h.hexdigest()
-                external_Dep = image_info.image_from[0]
-                image_info.direct_image_from = image_info.image_from[0]
-                last_dep = genImageBuildName(image_info)
-            else:
-                image_info.direct_image_from = last_dep
-                h = blake2b(digest_size=4)
-                h.update(bytes(hash_calculation, 'utf-8'))
-                image_info.image_id = h.hexdigest()
-                last_dep = genImageBuildName(image_info)
-
-            hash_calculation += image_info.name
-            image_info.external_image_from = external_Dep
-
-        image_to_build[len(image_to_build)-1].image_id = ""
-
-
     # Build images
     for image_to_build in images_to_build:
         load_souce_layer_added = False
         Add_entrypoint_script = False
         debug_file = ""
+        main_image_info = None
+        sources_to_download=list()
         for image_info in image_to_build:
-
-            # Display image info
-            log.info("\nImage: %s (%s) from %s (%s)" % (log.colorStr(log.fg.green, genImageBuildName(image_info)), log.colorStr(log.fg.green, image_info.dockerfile_path),
-                    log.colorStr(log.fg.green, image_info.direct_image_from), log.colorStr(log.fg.green, image_info.external_image_from)))
-
 
             # Check if missing dep
             if len(image_info.not_found_image_from) > 0 and image_info.not_found_image_from[0] != image_info.external_image_from:
@@ -1209,12 +1176,19 @@ def main(argv=sys.argv[1:]):
                 return -1
 
 
-            # Include build tools scripts
-            dockerfile_generated = ""
-            dockerfile_generated += autogenerated_image_code_begin_tag + "\n\n"
-            dockerfile_generated += version_info + "\n\n"
-            dockerfile_generated += addBuildTools(os.path.dirname(image_info.dockerfile_path))
-            sources_to_download=list()
+            # Only if first image
+            if image_info == image_to_build[0]:
+                image_info.dockerfile_generated += version_info + "\n\n"
+                image_info.dockerfile_generated += addBuildTools(os.path.dirname(image_info.dockerfile_path))
+
+
+            # Display image info
+            log.info("\nImage: %s (%s)" % (log.colorStr(log.fg.green, genImageBuildName(image_info)), log.colorStr(log.fg.green, image_info.dockerfile_path)))
+            image_info.dockerfile_generated += "#--------------------------------------------------------------------------------------------------------------------------------\n"
+            image_info.dockerfile_generated += "# Image: %s (%s)\n\n" % (genImageBuildName(image_info), image_info.dockerfile_path)
+
+
+            # Generate code for each file
             for docker_build_file in image_info.layers_files:
 
                 file_name = os.path.basename(docker_build_file)
@@ -1229,24 +1203,24 @@ def main(argv=sys.argv[1:]):
                 if os.path.abspath(args.debug) == full_path:
                     log.info("%s %s" % (log.colorStr(log.fg.yellow,
                                 "[DEBUG STEP]   "), display_name))
-                    dockerfile_generated += addDebugStep(docker_build_file, image_current_folder)
+                    image_info.dockerfile_generated += addDebugStep(docker_build_file, image_current_folder)
                     debug_file = full_path
                     if load_souce_layer_added == False:
                         load_souce_layer_added = True
-                        dockerfile_generated += addLoadImageSource()
+                        image_info.dockerfile_generated += addLoadImageSource()
                     break
 
 
                 if checkIfTypeFile(file_name, exec_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.blue,
                                 "[BUILD STEP]   "), display_name))
-                    dockerfile_generated += addBuildStep(docker_build_file, image_current_folder)
+                    image_info.dockerfile_generated += addBuildStep(docker_build_file, image_current_folder)
 
                 elif checkIfTypeFile(file_name, source_file_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.lightred,
                                 "[REQUIRED]     "), display_name))
                     source_list, aux_docker_file_content = getRequiedSources(os.path.dirname(image_info.dockerfile_path), docker_build_file, image_current_folder, args.download_in_local)
-                    dockerfile_generated += aux_docker_file_content
+                    image_info.dockerfile_generated += aux_docker_file_content
                     sources_to_download += source_list
                     for source in source_list:
                         log.info("%s %s -> %s" % (log.colorStr(log.fg.lightred,
@@ -1255,149 +1229,148 @@ def main(argv=sys.argv[1:]):
                 elif checkIfTypeFile(file_name, dokerfile_append_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.purple,
                                 "[RAW APPEND]   "), display_name))
-                    dockerfile_generated += addRawAppend(os.path.dirname(image_info.dockerfile_path), docker_build_file)
+                    image_info.dockerfile_generated += addRawAppend(os.path.dirname(image_info.dockerfile_path), docker_build_file)
 
                 elif checkIfTypeFile(file_name, build_export_source_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.cyan,
                                 "[BUILD SOURCE] "), display_name))
-                    dockerfile_generated += addBuildSource(docker_build_file, image_current_folder)
+                    image_info.dockerfile_generated += addBuildSource(docker_build_file, image_current_folder)
 
                 elif checkIfTypeFile(file_name, image_export_source_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.lightcyan,
                                 "[IMAGE SOURCE] "), display_name))
                     if load_souce_layer_added == False:
                         load_souce_layer_added = True
-                        dockerfile_generated += addLoadImageSource()
-                    dockerfile_generated += addImageSource(docker_build_file, image_current_folder)
+                        image_info.dockerfile_generated += addLoadImageSource()
+                    image_info.dockerfile_generated += addImageSource(docker_build_file, image_current_folder)
 
                 elif checkIfTypeFile(file_name, entrypoint_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.orange,
                                 "[ENTRYPOINT]   "), display_name))
                     if Add_entrypoint_script == False:
                         Add_entrypoint_script = True
-                        dockerfile_generated += addLoadEntrypointsScript()
-                    dockerfile_generated += addEntrypoint(docker_build_file, image_current_folder)
+                        image_info.dockerfile_generated += addLoadEntrypointsScript()
+                    image_info.dockerfile_generated += addEntrypoint(docker_build_file, image_current_folder)
 
                 else:
                     log.warning("unknown file type '%s'" % docker_build_file)
 
 
-            # Add entrypoint
-            if Add_entrypoint_script:
-                dockerfile_generated += addLoadEntrypoints() + "\n\n"
+            # Only if last image
+            if image_info == image_to_build[-1]:
+
+                # Sent main image info
+                main_image_info = image_info
 
 
-            # Add debug
-            if debug_file == "" :
-                dockerfile_generated += addCleanWorkingDir(args.keep_tmp_files, image_info.name) + "\n\n"
+                # Add entrypoint
+                if Add_entrypoint_script:
+                    image_info.dockerfile_generated += addLoadEntrypoints()
 
 
-            # Autogenerated code end
-            dockerfile_generated += autogenerated_image_code_end_tag + "\n\n"
+                # Add debug
+                if debug_file == "" :
+                    image_info.dockerfile_generated += addCleanWorkingDir(args.keep_tmp_files, image_info.name)
 
 
-            # Remplace generated content
-            image_info.dockerfile_content = image_info.dockerfile_content.replace(image_generate_code_tag, dockerfile_generated)
-            #image_info.dockerfile_content = re.sub("%s.*\n" % image_from_tag, "", image_info.dockerfile_content)
+        # Remplace generated content
+        all_generated_content = autogenerated_image_code_begin_tag + "\n\n"
+        for image_info in image_to_build:
+            all_generated_content += image_info.dockerfile_generated + "\n\n"
+        all_generated_content += autogenerated_include_code_begin_tag + "\n\n"
+        main_image_info.dockerfile_content = main_image_info.dockerfile_content.replace(image_generate_code_tag, all_generated_content)
+        #main_image_info.dockerfile_content = re.sub("%s.*\n" % image_from_tag, "", main_image_info.dockerfile_content)
 
 
-            # Set from tag
-            #image_info.dockerfile_content = "%s %s\n\n%s\n\n" % (image_from_tag, image_info.direct_image_from, image_info.dockerfile_content)
+        # Display generated dockerfile
+        if args.gen_dockerfile is not None:
 
-
-            # Display generated dockerfile
-            if args.gen_dockerfile is not None:
-
-                # Get file name and path
-                file_path = os.path.dirname(image_info.dockerfile_path)
-                if args.gen_dockerfile == "":
-                    file_name=genImageBuildName(image_info).replace(":", ".") + ".Dockerfile"
-                else:
-                    file_name=args.gen_dockerfile
-
-                # Check file path
-                if not os.path.isdir(file_path):
-                    log.error("Can't create '%s' at '%s'. Directory does not exists." % (file_name, file_path))
-                    return -1
-
-                # Check if file exits
-                #if os.path.isfile(os.path.join(file_path,file_name)):
-                #    log.error("Can't create '%s' at '%s'. File exists." % (file_name, file_path))
-                #    return -1
-
-
-                # Create file
-                open(os.path.join(file_path,file_name), 'w').write(image_info.dockerfile_content)
-                continue
-
-
-            # Exit if dry-build
-            if args.dry_build:
-                continue
-
-
-            # Skip if docker is not installed
-            if shutil.which("docker") is None:
-                log.error("Cant build '%s'. Docker is not installed." % (genImageBuildName(image_info)))
-                continue
-
-
-            # Geneate file
-            open(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_file), 'w').write(image_info.dockerfile_content)
-
-
-            # Download sources
-            if args.download_in_local:
-                for source in sources_to_download:
-                    # Check if nee to be downloaded
-                    download=True
-                    for check in needToDownloadchecks:
-                        if check(source):
-                            download=False
-                            break
-
-                    # Download
-                    if download:
-                        log.trace("Downloading %s -> %s..." % (log.colorStr(log.fg.lightblue, source.uri), log.colorStr(log.fg.lightblue, source.file)))
-                        download_file = requests.get(source.uri)
-                        open(os.path.join(source.image_path, source.file), 'wb').write(download_file.content)
-
-
-            # build build string
-            final_image_name=genImageBuildName(image_info, debug_file != "")
-            command_string = "docker build -t %s -f %s" % (final_image_name, created_docker_file)
-            if image_info.build_args != "":
-                command_string += image_info.build_args + " "
-            if args.docker_build_args != "":
-                command_string += args.docker_build_args + " "
-            command_string += " ."
-
-
-            # Build docker image
-            if is_windows:
-                cmd=["cmd", "/C", "%s" % command_string]
+            # Get file name and path
+            file_path = os.path.dirname(main_image_info.dockerfile_path)
+            if args.gen_dockerfile == "":
+                file_name=genImageBuildName(main_image_info).replace(":", ".") + ".Dockerfile"
             else:
-                cmd=["bash", "-c", "sudo %s" % command_string]
-            p = subprocess.Popen(cmd, cwd=os.path.dirname(image_info.dockerfile_path))
-            p.communicate()
-            if p.returncode != 0:
-                log.error("Error when building '%s'" % (image_info.dockerfile_path))
+                file_name=args.gen_dockerfile
+
+            # Check file path
+            if not os.path.isdir(file_path):
+                log.error("Can't create '%s' at '%s'. Directory does not exists." % (file_name, file_path))
                 return -1
 
+            # Check if file exits
+            #if os.path.isfile(os.path.join(file_path,file_name)):
+            #    log.error("Can't create '%s' at '%s'. File exists." % (file_name, file_path))
+            #    return -1
 
-            # Clean
-            os.remove(os.path.join(os.path.dirname(image_info.dockerfile_path), created_docker_file))
+
+            # Create file
+            open(os.path.join(file_path, file_name), 'w').write(main_image_info.dockerfile_content)
+            continue
 
 
-            # Debug
-            if debug_file != "" :
-                cmd=["bash", "-c", "sudo docker run -it --rm --entrypoint bash -v %s:%s -w %s %s" %
-                    (escapeLinuxConsoleChars(os.path.dirname(debug_file)), image_debug_folder, image_current_working_dir,
-                    final_image_name)]
-                p = subprocess.Popen(cmd, cwd=os.path.dirname(image_info.dockerfile_path))
-                p.communicate()
+        # Exit if dry-build
+        if args.dry_build:
+            continue
 
-                break
+
+        # Skip if docker is not installed
+        if shutil.which("docker") is None:
+            log.error("Cant build '%s'. Docker is not installed." % (genImageBuildName(main_image_info)))
+            continue
+
+
+        # Geneate file
+        open(os.path.join(os.path.dirname(main_image_info.dockerfile_path), created_docker_file), 'w').write(main_image_info.dockerfile_content)
+
+
+        # Download sources
+        if args.download_in_local:
+            for source in sources_to_download:
+                # Check if nee to be downloaded
+                download=True
+                for check in needToDownloadchecks:
+                    if check(source):
+                        download=False
+                        break
+
+                # Download
+                if download:
+                    log.trace("Downloading %s -> %s..." % (log.colorStr(log.fg.lightblue, source.uri), log.colorStr(log.fg.lightblue, source.file)))
+                    download_file = requests.get(source.uri)
+                    open(os.path.join(source.image_path, source.file), 'wb').write(download_file.content)
+
+
+        # build build string
+        final_image_name=genImageBuildName(main_image_info, debug_file != "")
+        command_string = "docker build -t %s -f %s" % (final_image_name, created_docker_file)
+        if main_image_info.build_args != "":
+            command_string += main_image_info.build_args + " "
+        if args.docker_build_args != "":
+            command_string += args.docker_build_args + " "
+        command_string += " ."
+
+
+        # Build docker image
+        if is_windows:
+            cmd=["cmd", "/C", "%s" % command_string]
+        else:
+            cmd=["bash", "-c", "sudo %s" % command_string]
+        p = subprocess.Popen(cmd, cwd=os.path.dirname(main_image_info.dockerfile_path))
+        p.communicate()
+        if p.returncode != 0:
+            log.error("Error when building '%s'" % (main_image_info.dockerfile_path))
+            return -1
+
+
+        # Debug
+        if debug_file != "" :
+            cmd=["bash", "-c", "sudo docker run -it --rm --entrypoint bash -v %s:%s -w %s %s" %
+                (escapeLinuxConsoleChars(os.path.dirname(debug_file)), image_debug_folder, image_current_working_dir,
+                final_image_name)]
+            p = subprocess.Popen(cmd, cwd=os.path.dirname(main_image_info.dockerfile_path))
+            p.communicate()
+
+            break
 
         # Break if debug
         if debug_file != "" :
