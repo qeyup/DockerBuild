@@ -1208,6 +1208,7 @@ def main(argv=sys.argv[1:]):
                     image_info.dockerfile_generated += addDebugStep(docker_build_file, image_current_folder)
                     debug_file = full_path
                     main_image_info = image_info
+                    stop = True
                     if load_souce_layer_added == False:
                         load_souce_layer_added = True
                         image_info.dockerfile_generated += addLoadImageSource()
@@ -1268,13 +1269,8 @@ def main(argv=sys.argv[1:]):
                         break
 
 
-            # Break if debug
-            if debug_file != "" :
-                break
-
-
             # Only if last image
-            elif image_info == image_to_build[-1]:
+            if image_info == image_to_build[-1]:
 
                 # Sent main image info
                 main_image_info = image_info
