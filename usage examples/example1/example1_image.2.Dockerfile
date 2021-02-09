@@ -274,7 +274,7 @@ RUN chmod u+x /tmp/dockerbuild/BuildScript
 
 
 #--------------------------------------------------------------------------------------------------------------------------------
-# Image: example1_nested1 (/home/moe/Projects/DockerBuild/usage examples/example1/image 1/Dockerfile)
+# Image: example1_nested1 (./image 1/Dockerfile)
 
 # Build step 'image 1/Dockerfile.sh'
 COPY ["image 1/Dockerfile.sh", "/tmp/dockerbuild/example1_nested1/image 1/Dockerfile.sh"]
@@ -293,7 +293,7 @@ RUN /tmp/dockerbuild/BuildScript ImageExport "/tmp/dockerbuild/example1_nested1/
 
 
 #--------------------------------------------------------------------------------------------------------------------------------
-# Image: example1_nested3 (/home/moe/Projects/DockerBuild/usage examples/example1/image 2/image 3/Dockerfile)
+# Image: example1_nested3 (./image 2/image 3/Dockerfile)
 
 # Build source 'image 2/image 3/ImageExport'
 COPY ["image 2/image 3/ImageExport", "/tmp/dockerbuild/example1_nested3/image 2/image 3/ImageExport"]
@@ -303,10 +303,10 @@ RUN /tmp/dockerbuild/BuildScript ImageExport "/tmp/dockerbuild/example1_nested3/
 
 
 #--------------------------------------------------------------------------------------------------------------------------------
-# Image: example1_nested2 (/home/moe/Projects/DockerBuild/usage examples/example1/image 2/Dockerfile)
+# Image: example1_nested2 (./image 2/Dockerfile)
 
 # Required sources 'image 2/Sources'
-COPY ["image 2/glibc.tar.xz", "/tmp/dockerbuild/example1_nested2/image 2/glibc.tar.xz"]
+ADD ["https://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", "/tmp/dockerbuild/example1_nested2/image 2/glibc.tar.xz"]
 
 
 # Build source 'image 2/ImageExport'
@@ -317,10 +317,10 @@ RUN /tmp/dockerbuild/BuildScript ImageExport "/tmp/dockerbuild/example1_nested2/
 
 
 #--------------------------------------------------------------------------------------------------------------------------------
-# Image: example1_image:2 (/home/moe/Projects/DockerBuild/usage examples/example1/example1_image.2.Dockerfile)
+# Image: example1_image:2 (./example1_image.2.Dockerfile)
 
 # Required sources 'layer 1/Sources'
-COPY ["layer 1/glibc.tar.xz", "/tmp/dockerbuild/example1_image:2/layer 1/glibc.tar.xz"]
+ADD ["https://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", "/tmp/dockerbuild/example1_image:2/layer 1/glibc.tar.xz"]
 
 
 # Build source 'layer 1/BuildExport'

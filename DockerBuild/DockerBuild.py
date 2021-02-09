@@ -1187,9 +1187,10 @@ def main(argv=sys.argv[1:]):
 
 
             # Display image info
+            aux_image_path = os.path.relpath(image_info.dockerfile_path, args.main_path)
             log.info("\nImage: %s (%s)" % (log.colorStr(log.fg.green, genImageBuildName(image_info)), log.colorStr(log.fg.green, image_info.dockerfile_path)))
             image_info.dockerfile_generated += "#--------------------------------------------------------------------------------------------------------------------------------\n"
-            image_info.dockerfile_generated += "# Image: %s (%s)\n\n" % (genImageBuildName(image_info), image_info.dockerfile_path)
+            image_info.dockerfile_generated += "# Image: %s (./%s)\n\n" % (genImageBuildName(image_info), aux_image_path)
 
 
             # Generate code for each file
