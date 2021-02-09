@@ -1099,7 +1099,11 @@ def main(argv=sys.argv[1:]):
 
             # Get from
             if file_line.startswith(image_include_tag):
-                image_info.image_include.append(file_line.replace(image_include_tag, ""))
+                include_image_name = file_line.replace(image_include_tag, "")
+                if include_image_name != include_image_name.lower():
+                    log.error("Include image name '%s' for '%s' must be in lowercase" % (include_image_name,docker_file_path))
+                    return -1
+                image_info.image_include.append(include_image_name)
 
 
             # Get image name
@@ -1129,8 +1133,9 @@ def main(argv=sys.argv[1:]):
         if image_info.name == "":
             log.error("Missing image name for '%s'" % docker_file_path)
             return -1
-        else:
-            image_info.name = image_info.name.lower()
+        elif image_info.name != image_info.name.lower():
+            log.error("Image name '%s' for '%s' must be in lowercase" % (image_info.name, docker_file_path))
+            return -1
 
 
         # Get build files
