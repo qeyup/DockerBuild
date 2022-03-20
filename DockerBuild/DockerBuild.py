@@ -92,9 +92,9 @@ Files types:
 
     - (*)%s: Executed script in a docker build step.
 
-    - (*)%s: Source file included only in the build process.
-
     - (*)%s: Source file included in the container and build process.
+
+    - (*)%s: Source file included only in the build process.
 
     - (*)%s: Entrypoint.
 
