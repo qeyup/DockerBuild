@@ -44,7 +44,7 @@ image_bsource_folder="/etc/dockerbuild/bsource.d"
 image_working_dir="/tmp/dockerbuild/"
 image_current_working_dir="%scurrent_build" % (image_working_dir)
 image_debug_folder="%sdebug_folder" % (image_working_dir)
-image_build_script="%sBuildScript" % (image_working_dir)
+image_build_script="/etc/dockerbuild/BuildScript"
 
 debug_tag="Debug"
 
