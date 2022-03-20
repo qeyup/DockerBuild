@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.5.0"
+version="0.6.1"
 
 
 # Platform
@@ -44,7 +44,7 @@ image_bsource_folder="/etc/dockerbuild/bsource.d"
 image_working_dir="/tmp/dockerbuild/"
 image_current_working_dir="%scurrent_build" % (image_working_dir)
 image_debug_folder="%sdebug_folder" % (image_working_dir)
-image_build_script="%sBuildScript" % (image_working_dir)
+image_build_script="/etc/dockerbuild/BuildScript"
 
 debug_tag="Debug"
 
@@ -92,9 +92,9 @@ Files types:
 
     - (*)%s: Executed script in a docker build step.
 
-    - (*)%s: Source file included only in the build process.
-
     - (*)%s: Source file included in the container and build process.
+
+    - (*)%s: Source file included only in the build process.
 
     - (*)%s: Entrypoint.
 
@@ -369,17 +369,21 @@ debugFile(){
     ln -s "%s/${EXEC_FILE}" "${CURRENT_WORKING_PATH}/${EXEC_FILE}"
 }
 
-
-case "$TYPE" in
-    %s) buildStep ;;
-    %s) buildSource ;;
-    %s) imageSource ;;
-    %s) entryPoint ;;
-    %s) debugFile ;;
-    *) exit -1 ;;
-esac
+(
+    case "$TYPE" in
+        %s) buildStep ;;
+        %s) buildSource ;;
+        %s) imageSource ;;
+        %s) entryPoint ;;
+        %s) debugFile ;;
+        *) exit -1 ;;
+    esac
+)
+RV=$?
+rm -rf %s
+exit $RV
 ''' % (image_working_dir, image_current_working_dir, image_bsource_folder, image_source_folder, image_entrypoint_folder, image_debug_folder,
-    exec_extension, build_export_source_extension, image_export_source_extension, entrypoint_extension, debug_tag)
+    exec_extension, build_export_source_extension, image_export_source_extension, entrypoint_extension, debug_tag, image_working_dir) 
 
 
 # Entrypoint script
@@ -865,14 +869,6 @@ def addBuildStep(file, root_dir):
         (image_build_script, exec_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
-def addCleanWorkingDir(keep, image_name):
-    layer_lines = list()
-    layer_lines.append("# Add clean workspace")
-    if not keep:
-        layer_lines.append("RUN rm -rf %s" % (image_working_dir))
-
-    return "\n".join(layer_lines) + "\n\n\n"
-
 def addLoadEntrypointsScript():
     layer_lines = list()
     layer_lines.append("# Add Load all entrypoints script")
@@ -910,7 +906,7 @@ def addRawAppend(image_path, file):
     layer_lines = list()
     layer_lines.append("# Raw append '%s'" % file)
     for file_line in source_data_file:
-        layer_lines.append(file_line)
+        layer_lines.append(file_line.replace('\n', '').replace('\r', ''))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addBuildSource(file, root_dir):
@@ -1328,9 +1324,6 @@ def main(argv=sys.argv[1:]):
                     # Add entrypoint
                     if Add_entrypoint_script:
                         image_info.dockerfile_generated += addLoadEntrypoints()
-
-                    # Clean step
-                    image_info.dockerfile_generated += addCleanWorkingDir(args.keep_tmp_files, image_info.name)
 
 
         # pretty display
