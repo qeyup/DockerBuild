@@ -910,7 +910,7 @@ def addRawAppend(image_path, file):
     layer_lines = list()
     layer_lines.append("# Raw append '%s'" % file)
     for file_line in source_data_file:
-        layer_lines.append(file_line)
+        layer_lines.append(file_line.replace('\n', '').replace('\r', ''))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addBuildSource(file, root_dir):
