@@ -378,8 +378,9 @@ case "$TYPE" in
     %s) debugFile ;;
     *) exit -1 ;;
 esac
+rm -rf %s
 ''' % (image_working_dir, image_current_working_dir, image_bsource_folder, image_source_folder, image_entrypoint_folder, image_debug_folder,
-    exec_extension, build_export_source_extension, image_export_source_extension, entrypoint_extension, debug_tag)
+    exec_extension, build_export_source_extension, image_export_source_extension, entrypoint_extension, debug_tag, image_working_dir) 
 
 
 # Entrypoint script
@@ -865,14 +866,6 @@ def addBuildStep(file, root_dir):
         (image_build_script, exec_extension, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
-def addCleanWorkingDir(keep, image_name):
-    layer_lines = list()
-    layer_lines.append("# Add clean workspace")
-    if not keep:
-        layer_lines.append("RUN rm -rf %s" % (image_working_dir))
-
-    return "\n".join(layer_lines) + "\n\n\n"
-
 def addLoadEntrypointsScript():
     layer_lines = list()
     layer_lines.append("# Add Load all entrypoints script")
@@ -1328,9 +1321,6 @@ def main(argv=sys.argv[1:]):
                     # Add entrypoint
                     if Add_entrypoint_script:
                         image_info.dockerfile_generated += addLoadEntrypoints()
-
-                    # Clean step
-                    image_info.dockerfile_generated += addCleanWorkingDir(args.keep_tmp_files, image_info.name)
 
 
         # pretty display
