@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.6.0"
+version="0.6.1"
 
 
 # Platform
@@ -369,16 +369,19 @@ debugFile(){
     ln -s "%s/${EXEC_FILE}" "${CURRENT_WORKING_PATH}/${EXEC_FILE}"
 }
 
-
-case "$TYPE" in
-    %s) buildStep ;;
-    %s) buildSource ;;
-    %s) imageSource ;;
-    %s) entryPoint ;;
-    %s) debugFile ;;
-    *) exit -1 ;;
-esac
+(
+    case "$TYPE" in
+        %s) buildStep ;;
+        %s) buildSource ;;
+        %s) imageSource ;;
+        %s) entryPoint ;;
+        %s) debugFile ;;
+        *) exit -1 ;;
+    esac
+)
+RV=$?
 rm -rf %s
+exit $RV
 ''' % (image_working_dir, image_current_working_dir, image_bsource_folder, image_source_folder, image_entrypoint_folder, image_debug_folder,
     exec_extension, build_export_source_extension, image_export_source_extension, entrypoint_extension, debug_tag, image_working_dir) 
 
