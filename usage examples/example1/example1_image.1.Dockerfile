@@ -31,6 +31,7 @@ echo "TYPE=\${1}" >> /etc/dockerbuild/BuildScript && \
 echo "EXEC_FILE=\"\${3}\"" >> /etc/dockerbuild/BuildScript && \
 echo "EXEC_PATH=\$(realpath \"\${2}\")" >> /etc/dockerbuild/BuildScript && \
 echo "FILE=\$(realpath \"\${2}/\${3}\")" >> /etc/dockerbuild/BuildScript && \
+echo "KEEP_FILES=\${4}" >> /etc/dockerbuild/BuildScript && \
 echo "MAIN_WORKING_PATH=\"/tmp/dockerbuild/\"" >> /etc/dockerbuild/BuildScript && \
 echo "CURRENT_WORKING_PATH=/tmp/dockerbuild/current_build" >> /etc/dockerbuild/BuildScript && \
 echo "REL_PATH=\$(realpath --relative-to=\${MAIN_WORKING_PATH} \"\${EXEC_PATH}\")" >> /etc/dockerbuild/BuildScript && \
@@ -267,7 +268,10 @@ echo "        *) exit -1 ;;" >> /etc/dockerbuild/BuildScript && \
 echo "    esac" >> /etc/dockerbuild/BuildScript && \
 echo ")" >> /etc/dockerbuild/BuildScript && \
 echo "RV=\$?" >> /etc/dockerbuild/BuildScript && \
-echo "rm -rf /tmp/dockerbuild/" >> /etc/dockerbuild/BuildScript && \
+echo "if [ \"\${KEEP_FILES}\" != \"True\" ]" >> /etc/dockerbuild/BuildScript && \
+echo "then" >> /etc/dockerbuild/BuildScript && \
+echo "    rm -rf /tmp/dockerbuild/" >> /etc/dockerbuild/BuildScript && \
+echo "fi" >> /etc/dockerbuild/BuildScript && \
 echo "exit \$RV" >> /etc/dockerbuild/BuildScript && \
 echo "" >> /etc/dockerbuild/BuildScript && \
 echo "" >> /etc/dockerbuild/BuildScript
@@ -279,7 +283,7 @@ RUN chmod u+x /etc/dockerbuild/BuildScript
 
 # Build step 'image 1/Dockerfile.sh'
 COPY ["image 1/Dockerfile.sh", "/tmp/dockerbuild/example1_nested1/image 1/Dockerfile.sh"]
-RUN /etc/dockerbuild/BuildScript Dockerfile.sh "/tmp/dockerbuild/example1_nested1/image 1" "Dockerfile.sh"
+RUN /etc/dockerbuild/BuildScript Dockerfile.sh "/tmp/dockerbuild/example1_nested1/image 1" "Dockerfile.sh" False
 
 
 # Add Load image source
@@ -324,6 +328,16 @@ RUN /etc/dockerbuild/BuildScript ImageExport "/tmp/dockerbuild/example1_nested2/
 ADD ["https://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", "/tmp/dockerbuild/example1_image:1/layer 1/glibc.tar.xz"]
 
 
+# Build step 'layer 1/1.- Dockerfile.sh'
+COPY ["layer 1/1.- Dockerfile.sh", "/tmp/dockerbuild/example1_image:1/layer 1/1.- Dockerfile.sh"]
+RUN /etc/dockerbuild/BuildScript Dockerfile.sh "/tmp/dockerbuild/example1_image:1/layer 1" "1.- Dockerfile.sh" True
+
+
+# Build step 'layer 1/2.- Dockerfile.sh'
+COPY ["layer 1/2.- Dockerfile.sh", "/tmp/dockerbuild/example1_image:1/layer 1/2.- Dockerfile.sh"]
+RUN /etc/dockerbuild/BuildScript Dockerfile.sh "/tmp/dockerbuild/example1_image:1/layer 1" "2.- Dockerfile.sh" True
+
+
 # Build source 'layer 1/BuildExport'
 COPY ["layer 1/BuildExport", "/tmp/dockerbuild/example1_image:1/layer 1/BuildExport"]
 RUN /etc/dockerbuild/BuildScript BuildExport "/tmp/dockerbuild/example1_image:1/layer 1" "BuildExport"
@@ -331,7 +345,7 @@ RUN /etc/dockerbuild/BuildScript BuildExport "/tmp/dockerbuild/example1_image:1/
 
 # Build step 'layer 1/Dockerfile.sh'
 COPY ["layer 1/Dockerfile.sh", "/tmp/dockerbuild/example1_image:1/layer 1/Dockerfile.sh"]
-RUN /etc/dockerbuild/BuildScript Dockerfile.sh "/tmp/dockerbuild/example1_image:1/layer 1" "Dockerfile.sh"
+RUN /etc/dockerbuild/BuildScript Dockerfile.sh "/tmp/dockerbuild/example1_image:1/layer 1" "Dockerfile.sh" False
 
 
 # Raw append 'layer 2/1. DockerfileAppend'
