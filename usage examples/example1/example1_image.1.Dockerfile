@@ -352,18 +352,27 @@ RUN /etc/dockerbuild/BuildScript Dockerfile.sh "/tmp/dockerbuild/example1_image:
 WORKDIR /root/
 
 
+# Add Load all entrypoints script
+RUN rm -f /etc/dockerbuild/entrypoint.sh && echo "#!/bin/bash" >> /etc/dockerbuild/entrypoint.sh && echo "" >> /etc/dockerbuild/entrypoint.sh && echo "# Load sources" >> /etc/dockerbuild/entrypoint.sh && echo "for SOURCE_FILE in \$(cd / && find /etc/dockerbuild/source.d -type f 2>/dev/null | sort); do" >> /etc/dockerbuild/entrypoint.sh && echo "    source "\${SOURCE_FILE}"" >> /etc/dockerbuild/entrypoint.sh && echo "done" >> /etc/dockerbuild/entrypoint.sh && echo "" >> /etc/dockerbuild/entrypoint.sh && echo "# Load all entrypoints" >> /etc/dockerbuild/entrypoint.sh && echo "for entrypoint_file in \$(cd / && find /etc/dockerbuild/entrypoint.d -type f 2>/dev/null | sort); do" >> /etc/dockerbuild/entrypoint.sh && echo "    \$entrypoint_file &" >> /etc/dockerbuild/entrypoint.sh && echo "done" >> /etc/dockerbuild/entrypoint.sh && echo "" >> /etc/dockerbuild/entrypoint.sh && echo "bash" >> /etc/dockerbuild/entrypoint.sh && echo "" >> /etc/dockerbuild/entrypoint.sh && chmod u+x /etc/dockerbuild/entrypoint.sh
+
+
+# Entrypoint 'layer 2/1. Entrypoint.sh'
+COPY ["layer 2/1. Entrypoint.sh", "/tmp/dockerbuild/example1_image:1/layer 2/1. Entrypoint.sh"]
+RUN /etc/dockerbuild/BuildScript Entrypoint.sh "/tmp/dockerbuild/example1_image:1/layer 2" "1. Entrypoint.sh"
+
+
 # Build source 'layer 2/2. ImageExport'
 COPY ["layer 2/2. ImageExport", "/tmp/dockerbuild/example1_image:1/layer 2/2. ImageExport"]
 RUN /etc/dockerbuild/BuildScript ImageExport "/tmp/dockerbuild/example1_image:1/layer 2" "2. ImageExport"
 
 
-# Add Load all entrypoints script
-RUN rm -f /etc/dockerbuild/entrypoint.sh && echo "#!/bin/bash" >> /etc/dockerbuild/entrypoint.sh && echo "" >> /etc/dockerbuild/entrypoint.sh && echo "# Load sources" >> /etc/dockerbuild/entrypoint.sh && echo "for SOURCE_FILE in \$(cd / && find /etc/dockerbuild/source.d -type f 2>/dev/null | sort); do" >> /etc/dockerbuild/entrypoint.sh && echo "    source "\${SOURCE_FILE}"" >> /etc/dockerbuild/entrypoint.sh && echo "done" >> /etc/dockerbuild/entrypoint.sh && echo "" >> /etc/dockerbuild/entrypoint.sh && echo "# Load all entrypoints" >> /etc/dockerbuild/entrypoint.sh && echo "for entrypoint_file in \$(cd / && find /etc/dockerbuild/entrypoint.d -type f 2>/dev/null | sort); do" >> /etc/dockerbuild/entrypoint.sh && echo "    \$entrypoint_file &" >> /etc/dockerbuild/entrypoint.sh && echo "done" >> /etc/dockerbuild/entrypoint.sh && echo "" >> /etc/dockerbuild/entrypoint.sh && echo "bash" >> /etc/dockerbuild/entrypoint.sh && echo "" >> /etc/dockerbuild/entrypoint.sh && chmod u+x /etc/dockerbuild/entrypoint.sh
-
-
 # Entrypoint 'layer 2/3. Entrypoint.sh'
 COPY ["layer 2/3. Entrypoint.sh", "/tmp/dockerbuild/example1_image:1/layer 2/3. Entrypoint.sh"]
 RUN /etc/dockerbuild/BuildScript Entrypoint.sh "/tmp/dockerbuild/example1_image:1/layer 2" "3. Entrypoint.sh"
+
+
+# Raw append 'layer 2/4. DockerfileAppend'
+WORKDIR /root/
 
 
 # Add Load all entrypoints
