@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.6.2"
+version="0.6.3"
 
 
 # Platform
@@ -642,11 +642,7 @@ def sortFoundFiles(file_list):
             sort_full_path = os.path.join(file_path, sort_string2 + file_name)
         else:
             sort_full_path = os.path.join(file_path, sort_string + file_name)
-
-        if checkIfTypeFile(file_name, entrypoint_extension_list):
-            sort_file_enpoint_list.append(sort_full_path)
-        else:
-            sort_file_list.append(sort_full_path)
+        sort_file_list.append(sort_full_path)
 
     # Sort
     sort_file_list.sort()
