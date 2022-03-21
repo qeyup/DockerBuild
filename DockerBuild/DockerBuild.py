@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.6.1"
+version="0.6.2"
 
 
 # Platform
@@ -144,6 +144,7 @@ TYPE=${1}
 EXEC_FILE="${3}"
 EXEC_PATH=$(realpath "${2}")
 FILE=$(realpath "${2}/${3}")
+KEEP_FILES=${4}
 MAIN_WORKING_PATH="%s"
 CURRENT_WORKING_PATH=%s
 REL_PATH=$(realpath --relative-to=${MAIN_WORKING_PATH} "${EXEC_PATH}")
@@ -380,7 +381,10 @@ debugFile(){
     esac
 )
 RV=$?
-rm -rf %s
+if [ "${KEEP_FILES}" != "True" ]
+then
+    rm -rf %s
+fi
 exit $RV
 ''' % (image_working_dir, image_current_working_dir, image_bsource_folder, image_source_folder, image_entrypoint_folder, image_debug_folder,
     exec_extension, build_export_source_extension, image_export_source_extension, entrypoint_extension, debug_tag, image_working_dir) 
@@ -854,7 +858,7 @@ def addDebugStep(file, root_dir):
         (image_build_script, debug_tag, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
-def addBuildStep(file, root_dir):
+def addBuildStep(file, root_dir, keep_files):
 
     file = Path(file).as_posix()
     root_dir = Path(root_dir).as_posix()
@@ -865,8 +869,8 @@ def addBuildStep(file, root_dir):
     layer_lines = list()
     layer_lines.append("# Build step '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
-    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
-        (image_build_script, exec_extension, working_path, os.path.basename(file)))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\" %s" %
+        (image_build_script, exec_extension, working_path, os.path.basename(file), keep_files))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addLoadEntrypointsScript():
@@ -1213,7 +1217,13 @@ def main(argv=sys.argv[1:]):
 
 
             # Generate code for each file
-            for docker_build_file in image_info.layers_files:
+            for index, docker_build_file in enumerate(image_info.layers_files):
+
+                keep_files = False
+                if (index+1 < len(image_info.layers_files) and index - 1 >= 0):
+                    next_file = image_info.layers_files[index+1]
+                    keep_files = (os.path.dirname(docker_build_file) == os.path.dirname(next_file))
+
 
                 # Get values
                 image_current_folder = genImageBuildName(image_info)
@@ -1253,7 +1263,7 @@ def main(argv=sys.argv[1:]):
                 if checkIfTypeFile(file_name, exec_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.blue,
                                 "[BUILD STEP]   "), display_name))
-                    image_info.dockerfile_generated += addBuildStep(docker_build_file, image_current_folder)
+                    image_info.dockerfile_generated += addBuildStep(docker_build_file, image_current_folder, keep_files)
 
                 elif checkIfTypeFile(file_name, source_file_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.lightred,
