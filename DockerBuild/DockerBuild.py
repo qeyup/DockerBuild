@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.6.3"
+version="0.6.4"
 
 
 # Platform
@@ -850,7 +850,7 @@ def addDebugStep(file, root_dir):
     layer_lines = list()
     layer_lines.append("# Build step '%s'" % file)
     layer_lines.append("RUN mkdir -p \"%s\"" % (working_path))
-    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
+    layer_lines.append("RUN %s %s \"%s\" \"%s\" True" %
         (image_build_script, debug_tag, working_path, os.path.basename(file)))
     return "\n".join(layer_lines) + "\n\n\n"
 
@@ -862,11 +862,16 @@ def addBuildStep(file, root_dir, keep_files):
     out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
     working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
 
+    if keep_files:
+        keep_files_str = "True"
+    else:
+        keep_files_str = "False"
+
     layer_lines = list()
     layer_lines.append("# Build step '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
     layer_lines.append("RUN %s %s \"%s\" \"%s\" %s" %
-        (image_build_script, exec_extension, working_path, os.path.basename(file), keep_files))
+        (image_build_script, exec_extension, working_path, os.path.basename(file), keep_files_str))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addLoadEntrypointsScript():
