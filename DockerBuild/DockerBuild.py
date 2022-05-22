@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.6.4"
+version="0.7.0"
 
 
 # Platform
@@ -856,16 +856,16 @@ def addDebugStep(file, root_dir):
 
 def addBuildStep(file, root_dir, keep_files):
 
+    if keep_files:
+        keep_files_str = "True"
+    else:
+        keep_files_str = "False"
+
     file = Path(file).as_posix()
     root_dir = Path(root_dir).as_posix()
     current_image_working_dir = Path(image_working_dir + root_dir + "/").as_posix()
     out_file=Path("%s/%s" % (current_image_working_dir, file)).as_posix()
     working_path=Path("%s/%s" % (current_image_working_dir, os.path.dirname(file))).as_posix()
-
-    if keep_files:
-        keep_files_str = "True"
-    else:
-        keep_files_str = "False"
 
     layer_lines = list()
     layer_lines.append("# Build step '%s'" % file)
@@ -888,7 +888,12 @@ def addLoadEntrypoints():
 
     return "\n".join(layer_lines) + "\n\n\n"
 
-def addEntrypoint(file, root_dir):
+def addEntrypoint(file, root_dir, keep_files):
+
+    if keep_files:
+        keep_files_str = "True"
+    else:
+        keep_files_str = "False"
 
     file = Path(file).as_posix()
     root_dir = Path(root_dir).as_posix()
@@ -899,8 +904,8 @@ def addEntrypoint(file, root_dir):
     layer_lines = list()
     layer_lines.append("# Entrypoint '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
-    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
-        (image_build_script, entrypoint_extension, working_path, os.path.basename(file)))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\" %s" %
+        (image_build_script, entrypoint_extension, working_path, os.path.basename(file), keep_files_str))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addRawAppend(image_path, file):
@@ -914,7 +919,12 @@ def addRawAppend(image_path, file):
         layer_lines.append(file_line.replace('\n', '').replace('\r', ''))
     return "\n".join(layer_lines) + "\n\n\n"
 
-def addBuildSource(file, root_dir):
+def addBuildSource(file, root_dir, keep_files):
+
+    if keep_files:
+        keep_files_str = "True"
+    else:
+        keep_files_str = "False"
 
     file = Path(file).as_posix()
     root_dir = Path(root_dir).as_posix()
@@ -925,8 +935,8 @@ def addBuildSource(file, root_dir):
     layer_lines = list()
     layer_lines.append("# Build source '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
-    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
-        (image_build_script, build_export_source_extension, working_path, os.path.basename(file)))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\" %s" %
+        (image_build_script, build_export_source_extension, working_path, os.path.basename(file), keep_files_str))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def addLoadImageSource():
@@ -937,7 +947,12 @@ def addLoadImageSource():
 
     return "\n".join(layer_lines) + "\n\n\n"
 
-def addImageSource(file, root_dir):
+def addImageSource(file, root_dir, keep_files):
+
+    if keep_files:
+        keep_files_str = "True"
+    else:
+        keep_files_str = "False"
 
     file = Path(file).as_posix()
     root_dir = Path(root_dir).as_posix()
@@ -948,8 +963,8 @@ def addImageSource(file, root_dir):
     layer_lines = list()
     layer_lines.append("# Build source '%s'" % file)
     layer_lines.append("COPY [\"%s\", \"%s\"]" % (file, out_file))
-    layer_lines.append("RUN %s %s \"%s\" \"%s\"" %
-        (image_build_script, image_export_source_extension, working_path, os.path.basename(file)))
+    layer_lines.append("RUN %s %s \"%s\" \"%s\" %s" %
+        (image_build_script, image_export_source_extension, working_path, os.path.basename(file), keep_files_str))
     return "\n".join(layer_lines) + "\n\n\n"
 
 
@@ -1284,7 +1299,7 @@ def main(argv=sys.argv[1:]):
                 elif checkIfTypeFile(file_name, build_export_source_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.cyan,
                                 "[BUILD SOURCE] "), display_name))
-                    image_info.dockerfile_generated += addBuildSource(docker_build_file, image_current_folder)
+                    image_info.dockerfile_generated += addBuildSource(docker_build_file, image_current_folder, keep_files)
 
                 elif checkIfTypeFile(file_name, image_export_source_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.lightcyan,
@@ -1292,7 +1307,7 @@ def main(argv=sys.argv[1:]):
                     if load_souce_layer_added == False:
                         load_souce_layer_added = True
                         image_info.dockerfile_generated += addLoadImageSource()
-                    image_info.dockerfile_generated += addImageSource(docker_build_file, image_current_folder)
+                    image_info.dockerfile_generated += addImageSource(docker_build_file, image_current_folder, keep_files)
 
                 elif checkIfTypeFile(file_name, entrypoint_extension_list):
                     log.info("%s %s" % (log.colorStr(log.fg.orange,
@@ -1300,7 +1315,7 @@ def main(argv=sys.argv[1:]):
                     if Add_entrypoint_script == False:
                         Add_entrypoint_script = True
                         image_info.dockerfile_generated += addLoadEntrypointsScript()
-                    image_info.dockerfile_generated += addEntrypoint(docker_build_file, image_current_folder)
+                    image_info.dockerfile_generated += addEntrypoint(docker_build_file, image_current_folder, keep_files)
 
                 else:
                     log.warning("unknown file type '%s'" % docker_build_file)
