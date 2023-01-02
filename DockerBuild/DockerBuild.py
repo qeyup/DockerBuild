@@ -228,7 +228,7 @@ buildStep(){
     cd "${CURRENT_WORKING_PATH}"
 
     CRLF_2_LF "${EXEC_FILE}"
-    chmod u+x "${EXEC_FILE}"
+    chmod a+x "${EXEC_FILE}"
 
     # exec
     (
@@ -350,7 +350,7 @@ entryPoint(){
 
     # Copiar
     cp "${FILE}" "${ENTRYPOINT_DIR}/${ENTRYPOINT_NAME}"
-    chmod u+x "${ENTRYPOINT_DIR}/${ENTRYPOINT_NAME}"
+    chmod a+x "${ENTRYPOINT_DIR}/${ENTRYPOINT_NAME}"
 
 
     # No test
@@ -767,7 +767,7 @@ def addBuildTools(image_path):
     layer_lines = list()
     layer_lines.append("# Add required scripts")
     layer_lines.append("RUN %s" % (add_scrip_layer))
-    layer_lines.append("RUN chmod u+x %s" % (image_build_script))
+    layer_lines.append("RUN chmod a+x %s" % (image_build_script))
     return "\n".join(layer_lines) + "\n\n\n"
 
 def getRequiedSources(image_path, file, root_dir, local_download):
@@ -877,7 +877,7 @@ def addBuildStep(file, root_dir, keep_files):
 def addLoadEntrypointsScript():
     layer_lines = list()
     layer_lines.append("# Add Load all entrypoints script")
-    layer_lines.append("RUN %s && chmod u+x %s" % (fileContentToEcho(run_entrypoint_script, image_entrypoint_file), image_entrypoint_file))
+    layer_lines.append("RUN %s && chmod a+x %s" % (fileContentToEcho(run_entrypoint_script, image_entrypoint_file), image_entrypoint_file))
 
     return "\n".join(layer_lines) + "\n\n\n"
 
