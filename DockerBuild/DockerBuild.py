@@ -21,7 +21,7 @@ import pdb # pdb.set_trace()
 
 
 # Set version
-version="0.7.0"
+version="0.7.1"
 
 
 # Platform
