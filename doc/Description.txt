@@ -1,13 +1,14 @@
-usage: DockerBuild [-h] [--dry-build] [--display-full-path]
-                   [--debug ['Dockerfile.sh' path]] [--main-path [PATH]]
-                   [--keep-tmp-files] [--download-in-local]
-                   [--gen-dockerfile [FILE_NAME]]
-                   [--create-new-dockerfile [PATH]]
-                   [--docker-build-args [ARGS]]
-                   [--source-part EXTENSIONS [EXTENSIONS ...]]
-                   [--docker-build-files PATHS [PATHS ...]]
+usage: DockerBuild.py [-h] [--dry-build] [--display-full-path]
+                      [--debug ['Dockerfile.sh' path]]
+                      [--stop-at ['Dockerfile.sh' path]] [--main-path [PATH]]
+                      [--keep-tmp-files] [--download-in-local]
+                      [--create-new-dockerfile [PATH]]
+                      [--split-at PATHS [PATHS ...]]
+                      [--docker-build-args ARGS [ARGS ...]]
+                      [--source-part EXTENSIONS [EXTENSIONS ...]]
+                      [--docker-build-files PATHS [PATHS ...]]
 
-Version: 0.3.0
+Version: 0.7.1
 
 DockerBuild is a 'dockerfile' file generation tools. It converts a file hierarchy tree into a dockerfile.
 
@@ -17,9 +18,9 @@ Files types:
 
     - (*)Dockerfile.sh: Executed script in a docker build step.
 
-    - (*)ImageExport: Source file included only in the build process.
+    - (*)ImageExport: Source file included in the container and build process.
 
-    - (*)BuildExport: Source file included in the container and build process.
+    - (*)BuildExport: Source file included only in the build process.
 
     - (*)Entrypoint.sh: Entrypoint.
 
@@ -33,14 +34,16 @@ optional arguments:
   --display-full-path   Disblay full path
   --debug ['Dockerfile.sh' path]
                         Debug at FILE
+  --stop-at ['Dockerfile.sh' path]
+                        stop at FILE
   --main-path [PATH]    Debug at FILE
   --keep-tmp-files      Dont remove temporal files
   --download-in-local   Download source in local dir
-  --gen-dockerfile [FILE_NAME]
-                        Generate dockerfile
   --create-new-dockerfile [PATH]
                         Create new dockerfile
-  --docker-build-args [ARGS]
+  --split-at PATHS [PATHS ...]
+                        split docker images at
+  --docker-build-args ARGS [ARGS ...]
                         Docker build command args
   --source-part EXTENSIONS [EXTENSIONS ...]
                         Source part extensions
