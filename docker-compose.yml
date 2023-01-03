@@ -1,0 +1,13 @@
+version: "3.3"
+services:
+  pypi_upload:
+    build: "docker/."
+    container_name: "pypi_upload"
+    image: "pypi_upload"
+    volumes:
+      - .:/home/pypi_upload/workspace
+      - /tmp/.X11-unix/:/tmp/.X11-unix/
+    environment:
+      - DISPLAY=:0
+    stdin_open: true 
+    tty: true

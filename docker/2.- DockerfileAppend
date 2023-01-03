@@ -1,0 +1,4 @@
+WORKDIR /home/pypi_upload/workspace
+USER pypi_upload
+VOLUME /home/pypi_upload/workspace
+ENTRYPOINT ["lxterminal", "-l", "-e", "update.sh"]
